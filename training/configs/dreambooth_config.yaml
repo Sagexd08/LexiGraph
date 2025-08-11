@@ -1,0 +1,85 @@
+# DreamBooth Training Configuration for Lexigraph
+
+# Model Configuration
+model:
+  pretrained_model_name_or_path: "runwayml/stable-diffusion-v1-5"
+  revision: null
+  variant: null
+  use_safetensors: true
+
+# Dataset Configuration
+dataset:
+  instance_data_dir: "../dataset/processed/images"
+  instance_prompt: "a photo of sks person"  # Replace 'sks' with your unique identifier
+  class_data_dir: null  # Optional: for class images
+  class_prompt: null    # Optional: for regularization
+  with_prior_preservation: false
+  num_class_images: 100
+  resolution: 512
+  center_crop: false
+  train_text_encoder: false
+  color_jitter: false
+  resize: true
+
+# Training Configuration
+training:
+  output_dir: "./models/dreambooth_output"
+  seed: 42
+  train_batch_size: 1
+  num_train_epochs: 100
+  max_train_steps: 400
+  checkpointing_steps: 100
+  checkpoints_total_limit: 5
+  resume_from_checkpoint: null
+  gradient_accumulation_steps: 1
+  gradient_checkpointing: true
+  learning_rate: 5.0e-6
+  scale_lr: false
+  lr_scheduler: "constant"
+  lr_warmup_steps: 0
+  lr_num_cycles: 1
+  lr_power: 1.0
+  use_8bit_adam: false
+  dataloader_num_workers: 0
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 1.0e-2
+  adam_epsilon: 1.0e-08
+  max_grad_norm: 1.0
+
+# Memory Optimization
+memory:
+  mixed_precision: "fp16"
+  enable_xformers_memory_efficient_attention: true
+  set_grads_to_none: true
+  gradient_checkpointing: true
+
+# Validation Configuration
+validation:
+  validation_prompt: "a photo of sks person"
+  num_validation_images: 4
+  validation_steps: 50
+  validation_epochs: null
+
+# Logging Configuration
+logging:
+  logging_dir: "./logs"
+  report_to: "tensorboard"  # Options: tensorboard, wandb, all
+  log_validation: true
+  validation_images: 4
+
+# Push to Hub Configuration
+hub:
+  push_to_hub: false
+  hub_token: null
+  hub_model_id: null
+  hub_private_repo: false
+
+# Advanced Configuration
+advanced:
+  prior_generation_precision: "fp32"
+  local_rank: -1
+  enable_xformers_memory_efficient_attention: true
+  noise_offset: 0.0
+  snr_gamma: null
+  min_snr_gamma: null

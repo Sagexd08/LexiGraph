@@ -1,0 +1,4 @@
+# Dataset Preparation Requirements
+Pillow>=10.0.0
+numpy>=1.24.0
+pathlib2>=2.3.7

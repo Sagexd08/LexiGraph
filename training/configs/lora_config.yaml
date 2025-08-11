@@ -1,0 +1,92 @@
+# LoRA Training Configuration for Lexigraph
+
+# Model Configuration
+model:
+  pretrained_model_name_or_path: "runwayml/stable-diffusion-v1-5"
+  revision: null
+  variant: null
+  use_safetensors: true
+
+# Dataset Configuration
+dataset:
+  train_data_dir: "../dataset/processed"
+  resolution: 512
+  center_crop: false
+  random_flip: false
+  color_jitter: false
+  train_text_encoder: false
+  caption_column: "text"
+  max_train_samples: null
+  proportion_empty_prompts: 0.0
+
+# LoRA Configuration
+lora:
+  rank: 4
+  alpha: 32
+  dropout: 0.0
+  bias: "none"
+  target_modules: ["to_k", "to_q", "to_v", "to_out.0"]
+  init_lora_weights: true
+
+# Training Configuration
+training:
+  output_dir: "./models/lora_output"
+  seed: 42
+  train_batch_size: 1
+  num_train_epochs: 100
+  max_train_steps: 1000
+  checkpointing_steps: 500
+  checkpoints_total_limit: 5
+  resume_from_checkpoint: null
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+  learning_rate: 1.0e-4
+  scale_lr: false
+  lr_scheduler: "cosine"
+  lr_warmup_steps: 500
+  lr_num_cycles: 1
+  lr_power: 1.0
+  use_8bit_adam: false
+  dataloader_num_workers: 0
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 1.0e-2
+  adam_epsilon: 1.0e-08
+  max_grad_norm: 1.0
+
+# Memory Optimization
+memory:
+  mixed_precision: "fp16"
+  enable_xformers_memory_efficient_attention: true
+  set_grads_to_none: true
+  gradient_checkpointing: true
+  allow_tf32: true
+
+# Validation Configuration
+validation:
+  validation_prompt: "a beautiful landscape"
+  num_validation_images: 4
+  validation_steps: 100
+  validation_epochs: null
+
+# Logging Configuration
+logging:
+  logging_dir: "./logs"
+  report_to: "tensorboard"  # Options: tensorboard, wandb, all
+  log_validation: true
+  validation_images: 4
+
+# Push to Hub Configuration
+hub:
+  push_to_hub: false
+  hub_token: null
+  hub_model_id: null
+  hub_private_repo: false
+
+# Advanced Configuration
+advanced:
+  prediction_type: null
+  snr_gamma: null
+  input_perturbation: 0.0
+  noise_offset: 0.0
+  min_snr_gamma: null
