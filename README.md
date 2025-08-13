@@ -1,124 +1,64 @@
-# Lexigraph - Custom Text-to-Image Generation Platform
+## Lexigraph - Custom Text-to-Image Generation Platform
 
-A complete end-to-end text-to-image generation application using custom-trained Stable Diffusion models with DreamBooth/LoRA fine-tuning.
+A complete production-ready, end-to-end text-to-image generation application using custom-trained Stable Diffusion models with DreamBooth/LoRA fine-tuning.
 
-## 🚀 Project Overview
+### Features
+- Dataset preparation and validation scripts
+- DreamBooth and LoRA training pipelines (Diffusers + Accelerate)
+- Push trained models to Hugging Face Hub
+- FastAPI backend with model management, logging, GPU/CPU toggles
+- React + Vite + Tailwind frontend with advanced UX
+- Dockerized deployment (GPU-ready) + Hugging Face Spaces app
 
-Lexigraph enables you to:
-- Train custom Stable Diffusion models using your own datasets
-- Deploy a production-ready FastAPI backend for image generation
-- Provide a modern React.js frontend with Tailwind CSS
-- Deploy to cloud platforms (Hugging Face Spaces, Render, Vercel)
+### Repository Structure
+- dataset/ — preparation, validation, augmentation
+- training/ — configs and training scripts (DreamBooth/LoRA) + push_to_hub
+- backend/ — FastAPI app (image generation API)
+- frontend/ — React app (Vite/Tailwind)
+- deployment/ — Docker, docker-compose, nginx, and HF Spaces app
 
-## 📁 Project Structure
+### Quickstart
+1) Dataset
+- Put raw images + optional captions in dataset/raw/
+- Prepare dataset:
+  python dataset/scripts/prepare_dataset.py --input_dir dataset/raw --output_dir dataset/processed --resolution 512
+- Validate: python dataset/scripts/validate_dataset.py --dataset_dir dataset/processed
+- (Optional) Augment: python dataset/scripts/augment_dataset.py --input_dir dataset/processed --output_dir dataset/augmented --multiplier 2
 
-```
-Lexigraph/
-├── dataset/                    # Dataset preparation and storage
-│   ├── raw/                   # Raw images and captions
-│   ├── processed/             # Processed 512x512 images
-│   ├── scripts/               # Dataset preparation scripts
-│   └── examples/              # Example datasets
-├── training/                  # Model training components
-│   ├── scripts/               # Training scripts (DreamBooth, LoRA)
-│   ├── configs/               # Training configurations
-│   ├── models/                # Trained model outputs
-│   └── logs/                  # Training logs
-├── backend/                   # FastAPI backend
-│   ├── app/                   # Main application code
-│   ├── models/                # Model loading and inference
-│   ├── api/                   # API endpoints
-│   ├── utils/                 # Utility functions
-│   └── tests/                 # Backend tests
-├── frontend/                  # React.js frontend
-│   ├── src/                   # Source code
-│   ├── public/                # Static assets
-│   └── dist/                  # Build output
-├── deployment/                # Deployment configurations
-│   ├── huggingface/           # HF Spaces configs
-│   ├── render/                # Render deployment
-│   └── vercel/                # Vercel deployment
-├── docs/                      # Documentation
-└── scripts/                   # Utility scripts
-```
+2) Training
+- Install: pip install -r training/requirements.txt
+- Configure DreamBooth: training/configs/dreambooth_config.yaml
+- Run: python training/scripts/train_dreambooth.py --config training/configs/dreambooth_config.yaml
+- Or LoRA: python training/scripts/train_lora.py --config training/configs/lora_config.yaml
+- Push to Hub: python training/scripts/push_to_hub.py --model_dir training/models/<output_dir> --repo_id <user/repo>
 
-## 🛠️ Technology Stack
+3) Backend
+- cp backend/.env.example backend/.env and set variables
+- pip install -r backend/requirements.txt
+- uvicorn app.main:app --reload --port 8000 (from backend/)
+- Endpoints: /api/v1/generate, /api/v1/model/info, /api/v1/system/info, /api/v1/health
 
-- **Training**: Hugging Face Diffusers, DreamBooth, LoRA
-- **Backend**: FastAPI, PyTorch, Pillow
-- **Frontend**: React.js, Tailwind CSS, Axios
-- **Deployment**: Hugging Face Spaces, Render, Vercel
-- **Storage**: Local filesystem, Hugging Face Hub
+4) Frontend
+- cd frontend && npm install
+- npm run dev (Vite on http://localhost:3000)
+- Configure API proxy in vite.config.ts if needed
 
-## 📋 Prerequisites
+5) Docker
+- docker compose -f deployment/docker-compose.yml up --build -d
+- Backend on :8000, Frontend on :3000
 
-- Python 3.8+
-- Node.js 16+
-- CUDA-compatible GPU (recommended for training)
-- Git and Git LFS
-- Hugging Face account (for model hosting)
+6) Hugging Face Spaces
+- Use deployment/huggingface/app.py
+- Set HF token + model path in environment
 
-## 🚀 Quick Start
+### Notes
+- Only open-source models/tools used (Stable Diffusion via Diffusers)
+- No paid APIs required
+- Tailwind requires proper PostCSS config in Vite project
 
-### 1. Dataset Preparation
-```bash
-cd dataset/scripts
-python prepare_dataset.py --input_dir ../raw --output_dir ../processed
-```
+### Tests
+- Add tests under backend/app/tests/ and use pytest
+- For dataset: create unit tests for prepare/validate scripts
 
-### 2. Model Training
-```bash
-cd training/scripts
-python train_dreambooth.py --config ../configs/dreambooth_config.yaml
-```
-
-### 3. Backend Setup
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### 4. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## 📖 Detailed Documentation
-
-- [Dataset Preparation Guide](docs/dataset-preparation.md)
-- [Training Guide](docs/training-guide.md)
-- [Backend API Documentation](docs/backend-api.md)
-- [Frontend Development](docs/frontend-development.md)
-- [Deployment Guide](docs/deployment-guide.md)
-
-## 🔧 Configuration
-
-All configurations are stored in respective config files:
-- Training: `training/configs/`
-- Backend: `backend/app/config.py`
-- Frontend: `frontend/src/config/`
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Hugging Face for the Diffusers library
-- Stability AI for Stable Diffusion
-- The open-source community for various tools and libraries
-
----
-
-**Note**: This project uses only open-source tools and models. No paid APIs are required.
+### License
+MIT
