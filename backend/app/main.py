@@ -21,6 +21,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .api.routes import router
+from .api.websocket import ws_router
+from .utils.job_queue import job_queue
 from .models.image_generator import image_generator
 
 # Configure logging
@@ -62,7 +64,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"Configuration: {settings.app_name} v{settings.app_version}")
     logger.info(f"Model type: {settings.model_type}")
     logger.info(f"Device: {settings.device}")
-    
+
+    # Start job queue workers if enabled
+    if settings.enable_generation_queue:
+        job_queue.max_concurrency = max(1, settings.max_concurrent_requests)
+        await job_queue.start_workers()
+        logger.info(f"Job queue started with concurrency={job_queue.max_concurrency}")
+
     # Load model on startup if configured
     try:
         logger.info("Loading model on startup...")
@@ -195,6 +203,8 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # Include API routes
 app.include_router(router, prefix="/api/v1", tags=["Image Generation"])
+app.include_router(ws_router, tags=["WebSocket"])
+
 
 # Root endpoint
 @app.get("/")

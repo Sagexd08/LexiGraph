@@ -41,7 +41,7 @@ from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 from huggingface_hub import create_repo, upload_folder
 from omegaconf import OmegaConf
-from peft import LoraConfig, get_peft_model, TaskType
+from diffusers.models.attention_processor import LoRAAttnProcessor
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -78,7 +78,6 @@ class LoRADataset(Dataset):
         self.random_flip = random_flip
         self.color_jitter = color_jitter
         
-        # Load images and captions
         self.images_dir = self.data_root / 'images'
         self.captions_dir = self.data_root / 'captions'
         
@@ -88,7 +87,6 @@ class LoRADataset(Dataset):
         self.image_files = list(self.images_dir.glob('*.jpg')) + list(self.images_dir.glob('*.jpeg'))
         self.image_files = sorted(self.image_files)
         
-        # Load captions
         self.captions = []
         for image_file in self.image_files:
             caption_file = self.captions_dir / f"{image_file.stem}.txt"
@@ -99,7 +97,6 @@ class LoRADataset(Dataset):
             else:
                 self.captions.append(f"A photo of {image_file.stem}")
                 
-        # Image transforms
         self.image_transforms = transforms.Compose([
             transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
             transforms.CenterCrop(size) if center_crop else transforms.RandomCrop(size),
@@ -113,11 +110,9 @@ class LoRADataset(Dataset):
         return len(self.image_files)
         
     def __getitem__(self, index):
-        # Load and process image
         image = Image.open(self.image_files[index]).convert("RGB")
         image = self.image_transforms(image)
         
-        # Process caption
         caption = self.captions[index]
         input_ids = self.tokenizer(
             caption,
@@ -184,7 +179,6 @@ class LoRATrainer:
         """Load and setup all required models."""
         logger.info("Loading models...")
         
-        # Load scheduler, tokenizer and models
         self.noise_scheduler = DDPMScheduler.from_pretrained(
             self.config.model.pretrained_model_name_or_path, 
             subfolder="scheduler"
@@ -194,7 +188,6 @@ class LoRATrainer:
             subfolder="tokenizer"
         )
         
-        # Load models
         self.text_encoder = CLIPTextModel.from_pretrained(
             self.config.model.pretrained_model_name_or_path, 
             subfolder="text_encoder"
@@ -208,22 +201,30 @@ class LoRATrainer:
             subfolder="unet"
         )
         
-        # Freeze models that shouldn't be trained
         self.vae.requires_grad_(False)
         self.text_encoder.requires_grad_(False)
         
-        # Setup LoRA for UNet
-        lora_config = LoraConfig(
-            r=self.config.lora.rank,
-            lora_alpha=self.config.lora.alpha,
-            target_modules=self.config.lora.target_modules,
-            lora_dropout=self.config.lora.dropout,
-            bias=self.config.lora.bias,
-            task_type=TaskType.DIFFUSION_IMAGE_GENERATION,
-        )
-        
-        self.unet = get_peft_model(self.unet, lora_config)
-        
+        rank = self.config.lora.rank
+        lora_attn_procs = {}
+        for name in self.unet.attn_processors.keys():
+            if name.endswith("attn1.processor"):
+                cross_attention_dim = None
+            else:
+                cross_attention_dim = self.unet.config.cross_attention_dim
+            if name.startswith("mid_block"):
+                hidden_size = self.unet.config.block_out_channels[-1]
+            elif name.startswith("up_blocks"):
+                block_id = int(name.split(".")[1])
+                hidden_size = list(reversed(self.unet.config.block_out_channels))[block_id]
+            elif name.startswith("down_blocks"):
+                block_id = int(name.split(".")[1])
+                hidden_size = self.unet.config.block_out_channels[block_id]
+            else:
+                # Fallback
+                hidden_size = self.unet.config.block_out_channels[0]
+            lora_attn_procs[name] = LoRAAttnProcessor(hidden_size=hidden_size, cross_attention_dim=cross_attention_dim, rank=rank)
+        self.unet.set_attn_processor(lora_attn_procs)
+
         # Enable memory efficient attention if available
         if is_xformers_available() and self.config.memory.enable_xformers_memory_efficient_attention:
             self.unet.enable_xformers_memory_efficient_attention()
@@ -237,7 +238,6 @@ class LoRATrainer:
         
     def setup_optimizer(self):
         """Setup optimizer and learning rate scheduler."""
-        # Setup optimizer
         if self.config.training.use_8bit_adam:
             try:
                 import bitsandbytes as bnb
@@ -247,7 +247,6 @@ class LoRATrainer:
         else:
             optimizer_cls = torch.optim.AdamW
             
-        # Get trainable parameters (only LoRA parameters)
         params_to_optimize = list(filter(lambda p: p.requires_grad, self.unet.parameters()))
         
         self.optimizer = optimizer_cls(
@@ -415,26 +414,27 @@ class LoRATrainer:
         self.accelerator.wait_for_everyone()
         if self.accelerator.is_main_process:
             self.save_lora_weights()
-            
+
         self.accelerator.end_training()
-        
+
     def save_lora_weights(self):
-        """Save the trained LoRA weights."""
+        """Save the trained LoRA weights (Diffusers-native)."""
         logger.info("Saving LoRA weights...")
-        
+
         unet = self.accelerator.unwrap_model(self.unet)
-        unet.save_pretrained(self.config.training.output_dir)
-        
-        # Also save a complete pipeline for easy inference
         pipeline = StableDiffusionPipeline.from_pretrained(
             self.config.model.pretrained_model_name_or_path,
             unet=unet,
             safety_checker=None,
             requires_safety_checker=False,
         )
-        
+
+        # Save LoRA adapters only
+        pipeline.save_lora_weights(self.config.training.output_dir)
+
+        # Optionally save entire pipeline snapshot (without baked weights)
         pipeline.save_pretrained(os.path.join(self.config.training.output_dir, "pipeline"))
-        
+
         # Push to hub if configured
         if self.config.hub.push_to_hub:
             upload_folder(
@@ -443,7 +443,7 @@ class LoRATrainer:
                 commit_message="End of training",
                 ignore_patterns=["step_*", "epoch_*"],
             )
-            
+
         logger.info(f"LoRA weights saved to {self.config.training.output_dir}")
 
 def main():

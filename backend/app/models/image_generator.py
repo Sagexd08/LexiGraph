@@ -8,7 +8,7 @@ Provides optimized generation with memory management and error handling.
 import logging
 import torch
 import gc
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, Callable
 from pathlib import Path
 from PIL import Image
 import io
@@ -198,7 +198,9 @@ class ImageGenerator:
         guidance_scale: float = 7.5,
         seed: Optional[int] = None,
         style: Optional[str] = None,
-        scheduler: Optional[str] = None
+        scheduler: Optional[str] = None,
+        progress_callback: Optional[Callable[[int, float], None]] = None,
+        callback_steps: int = 5,
     ) -> Dict[str, Any]:
         """
         Generate an image from a text prompt.
@@ -250,17 +252,43 @@ class ImageGenerator:
             logger.info(f"Generating image: {width}x{height}, steps: {num_inference_steps}, guidance: {guidance_scale}")
             
             # Generate image
+            # Optional progress callback wrapper for Diffusers
+            cb = None
+            if progress_callback is not None and num_inference_steps > 0:
+                total = max(num_inference_steps, 1)
+                def _cb(step, timestep, latents):
+                    pct = int((step / total) * 100)
+                    try:
+                        progress_callback(pct, step / float(total))
+                    except Exception:
+                        pass
+                cb = _cb
+
             with torch.autocast(self.device, dtype=self.torch_dtype):
-                result = self.pipeline(
-                    prompt=prompt,
-                    negative_prompt=negative_prompt,
-                    width=width,
-                    height=height,
-                    num_inference_steps=num_inference_steps,
-                    guidance_scale=guidance_scale,
-                    generator=generator,
-                    return_dict=True
-                )
+                if cb is not None:
+                    result = self.pipeline(
+                        prompt=prompt,
+                        negative_prompt=negative_prompt,
+                        width=width,
+                        height=height,
+                        num_inference_steps=num_inference_steps,
+                        guidance_scale=guidance_scale,
+                        generator=generator,
+                        callback=cb,
+                        callback_steps=max(1, int(callback_steps)),
+                        return_dict=True
+                    )
+                else:
+                    result = self.pipeline(
+                        prompt=prompt,
+                        negative_prompt=negative_prompt,
+                        width=width,
+                        height=height,
+                        num_inference_steps=num_inference_steps,
+                        guidance_scale=guidance_scale,
+                        generator=generator,
+                        return_dict=True
+                    )
             
             # Get the generated image
             image = result.images[0]

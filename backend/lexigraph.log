@@ -12,3 +12,14 @@
 2025-08-12 18:46:56,354 - app.main - INFO - Response: 200 - 0.022s
 2025-08-12 18:47:08,472 - app.main - INFO - Request: GET /api/v1/styles
 2025-08-12 18:47:08,473 - app.main - INFO - Response: 200 - 0.001s
+2025-08-14 00:32:04,943 - app.main - INFO - Logging configured successfully
+2025-08-14 00:32:04,959 - app.main - INFO - Starting Lexigraph Backend...
+2025-08-14 00:32:04,959 - app.main - INFO - Configuration: Lexigraph API v1.0.0
+2025-08-14 00:32:04,959 - app.main - INFO - Model type: base
+2025-08-14 00:32:04,960 - app.main - INFO - Device: cpu
+2025-08-14 00:32:04,960 - app.main - INFO - Loading model on startup...
+2025-08-14 00:32:04,960 - app.models.image_generator - INFO - Loading model from: .
+2025-08-14 00:32:04,960 - app.models.image_generator - INFO - Model type: base
+2025-08-14 00:32:06,139 - app.models.image_generator - ERROR - Failed to load model: Cannot load model hf-internal-testing/tiny-stable-diffusion-torch: model is not cached locally and an error occurred while trying to fetch metadata from the Hub. Please check out the root cause in the stacktrace above.
+2025-08-14 00:32:06,140 - app.main - WARNING - Failed to load model on startup - will load on first request
+2025-08-14 00:32:32,410 - app.main - INFO - Logging configured successfully

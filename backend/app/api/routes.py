@@ -9,13 +9,13 @@ import psutil
 
 from ..models.image_generator import image_generator
 from ..config import settings, get_memory_info, cleanup_memory
+from ..utils.job_queue import job_queue
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 class GenerateImageRequest(BaseModel):
-    """Request model for image generation."""
     prompt: str = Field(..., min_length=1, max_length=settings.max_prompt_length, description="Text prompt for image generation")
     negative_prompt: Optional[str] = Field(None, max_length=settings.max_prompt_length, description="Negative prompt to avoid certain features")
     width: int = Field(default=settings.default_width, ge=64, le=settings.max_width, description="Image width in pixels")
@@ -29,7 +29,6 @@ class GenerateImageRequest(BaseModel):
     @field_validator('width', 'height')
     @classmethod
     def validate_dimensions(cls, v):
-        """Ensure dimensions are multiples of 8."""
         if v % 8 != 0:
             raise ValueError("Width and height must be multiples of 8")
         return v
@@ -74,7 +73,6 @@ class SystemInfoResponse(BaseModel):
     model_info: Dict[str, Any]
     settings: Dict[str, Any]
 
-# Dependency for API key authentication
 async def verify_api_key(api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
     if settings.api_key is not None:
         if api_key != settings.api_key:
@@ -84,8 +82,9 @@ async def verify_api_key(api_key: Optional[str] = Header(default=None, alias="X-
             )
     return True
 
-# Semaphore for limiting concurrent requests
 generation_semaphore = asyncio.Semaphore(settings.max_concurrent_requests)
+
+USE_QUEUE = getattr(settings, "enable_generation_queue", False)
 
 @router.post("/generate", response_model=GenerateImageResponse)
 async def generate_image(
@@ -99,11 +98,28 @@ async def generate_image(
     This endpoint accepts a text prompt and various generation parameters,
     then returns a base64-encoded image along with metadata.
     """
+    if USE_QUEUE:
+        async def _run_generation():
+            if not image_generator.is_loaded:
+                image_generator.load_model()
+            return image_generator.generate_image(
+                prompt=request.prompt,
+                negative_prompt=request.negative_prompt,
+                width=request.width,
+                height=request.height,
+                num_inference_steps=request.num_inference_steps,
+                guidance_scale=request.guidance_scale,
+                seed=request.seed,
+                style=request.style,
+                scheduler=request.scheduler,
+            )
+        job_id = await job_queue.submit(_run_generation)
+        return GenerateImageResponse(success=True, image=None, metadata={"job_id": job_id}, generation_time=None)
+
     async with generation_semaphore:
         start_time = time.time()
-        
+
         try:
-            # Check if model is loaded
             if not image_generator.is_loaded:
                 logger.info("Model not loaded, loading now...")
                 success = image_generator.load_model()
@@ -112,8 +128,7 @@ async def generate_image(
                         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                         detail="Failed to load model"
                     )
-            
-            # Generate image
+
             result = image_generator.generate_image(
                 prompt=request.prompt,
                 negative_prompt=request.negative_prompt,
@@ -226,10 +241,8 @@ async def get_system_info(authenticated: bool = Depends(verify_api_key)):
     try:
         import torch
         
-        # Get memory info
         memory_info = get_memory_info()
         
-        # Get device info
         device_info = {
             "device": image_generator.device,
             "cuda_available": torch.cuda.is_available(),
@@ -240,10 +253,8 @@ async def get_system_info(authenticated: bool = Depends(verify_api_key)):
             device_info["cuda_device_name"] = torch.cuda.get_device_name(0)
             device_info["cuda_capability"] = torch.cuda.get_device_capability(0)
         
-        # Get model info
         model_info = image_generator.get_model_info()
         
-        # Get relevant settings
         settings_info = {
             "model_type": settings.model_type,
             "base_model": settings.base_model,
@@ -283,6 +294,13 @@ async def cleanup_system_memory(authenticated: bool = Depends(verify_api_key)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Memory cleanup failed: {str(e)}"
         )
+
+@router.get("/job/{job_id}")
+async def get_job_status(job_id: str, authenticated: bool = Depends(verify_api_key)):
+    status_info = job_queue.status(job_id)
+    if not status_info:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return status_info
 
 @router.get("/styles")
 async def get_available_styles():

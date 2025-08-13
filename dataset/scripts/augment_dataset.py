@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-Dataset Augmentation Script for Lexigraph
-
-Augments existing datasets with transformations to increase training data variety.
-Applies random transformations while preserving image quality for better model training.
-
-Usage:
-    python augment_dataset.py --input_dir ../processed --output_dir ../augmented --multiplier 3
-"""
-
 import os
 import argparse
 import json
@@ -34,14 +23,7 @@ class DatasetAugmenter:
     """Handles dataset augmentation for improved training diversity."""
     
     def __init__(self, input_dir: str, output_dir: str, multiplier: int = 2):
-        """
-        Initialize the dataset augmenter.
-        
-        Args:
-            input_dir: Directory containing processed dataset
-            output_dir: Directory to save augmented dataset
-            multiplier: Number of augmented versions per original image
-        """
+      
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.multiplier = multiplier
@@ -54,7 +36,6 @@ class DatasetAugmenter:
         
         self._create_directories()
         
-        # Augmentation parameters
         self.augmentation_config = {
             'brightness_range': (0.8, 1.2),
             'contrast_range': (0.8, 1.2),
@@ -124,7 +105,6 @@ class DatasetAugmenter:
         augmented = image.copy()
         transformations = []
         
-        # Apply color adjustments
         augmented = self._apply_brightness_adjustment(augmented)
         transformations.append("brightness")
         
@@ -134,12 +114,10 @@ class DatasetAugmenter:
         augmented = self._apply_saturation_adjustment(augmented)
         transformations.append("saturation")
         
-        # Apply spatial transformations
         augmented, flipped = self._apply_horizontal_flip(augmented)
         if flipped:
             transformations.append("horizontal_flip")
         
-        # Apply filters
         augmented = self._apply_blur(augmented)
         augmented = self._apply_noise(augmented)
         
@@ -158,14 +136,8 @@ class DatasetAugmenter:
         """
         caption = original_caption
         
-        # Add variation indicators for significant transformations
         if "horizontal_flip" in transformations:
-            # For flipped images, we might want to note the change
-            # but for most cases, the caption remains the same
             pass
-        
-        # For other transformations, the caption typically remains unchanged
-        # as they represent lighting/quality variations
         
         return caption
     
@@ -178,7 +150,6 @@ class DatasetAugmenter:
         """
         logger.info("Starting dataset augmentation...")
         
-        # Load original metadata
         metadata_file = self.input_dir / 'metadata.json'
         if not metadata_file.exists():
             logger.error("Original metadata.json not found")
@@ -201,7 +172,6 @@ class DatasetAugmenter:
             "failed_augmentations": 0
         }
         
-        # Create new metadata
         new_metadata = {
             "dataset_info": {
                 "source_dir": str(self.input_dir),

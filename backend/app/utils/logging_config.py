@@ -33,32 +33,26 @@ def setup_logging(
         Configured logger instance
     """
     
-    # Create logs directory if it doesn't exist
     if log_file:
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, log_level.upper()))
     
-    # Clear any existing handlers
     root_logger.handlers = []
     
-    # Create formatter
     formatter = logging.Formatter(
         fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     
-    # Console handler
     if enable_console:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(getattr(logging, log_level.upper()))
         console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
     
-    # File handler with rotation
     if log_file:
         file_handler = logging.handlers.RotatingFileHandler(
             filename=log_file,
@@ -70,7 +64,6 @@ def setup_logging(
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
     
-    # Set specific logger levels to reduce noise
     logging.getLogger("uvicorn").setLevel(logging.INFO)
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("diffusers").setLevel(logging.WARNING)
@@ -133,7 +126,6 @@ class ModelLoggerMixin:
         self.logger.debug(f"Memory usage - GPU: {gpu_memory:.1f}GB, System: {system_memory:.1f}GB")
 
 
-# Pre-configured loggers for common use cases
 api_logger = get_logger("lexigraph.api")
 model_logger = get_logger("lexigraph.model")
 training_logger = get_logger("lexigraph.training")

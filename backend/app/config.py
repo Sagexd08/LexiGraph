@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     max_height: int = Field(default=1024, env="MAX_HEIGHT")
     max_steps: int = Field(default=100, env="MAX_STEPS")
     max_guidance_scale: float = Field(default=20.0, env="MAX_GUIDANCE_SCALE")
+    lora_scale: float = Field(default=1.0, env="LORA_SCALE")
     
     # Hardware Settings
     device: str = Field(default="auto", env="DEVICE")  # "auto", "cuda", "cpu"
@@ -51,6 +52,7 @@ class Settings(BaseSettings):
     max_concurrent_requests: int = Field(default=3, env="MAX_CONCURRENT_REQUESTS")
     request_timeout: int = Field(default=300, env="REQUEST_TIMEOUT")  # seconds
     max_prompt_length: int = Field(default=500, env="MAX_PROMPT_LENGTH")
+    enable_generation_queue: bool = Field(default=False, env="ENABLE_GENERATION_QUEUE")
     
     # Security Settings
     api_key: Optional[str] = Field(default=None, env="API_KEY")
