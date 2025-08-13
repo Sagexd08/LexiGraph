@@ -158,7 +158,6 @@ class DatasetAugmenter:
         with open(metadata_file, 'r', encoding='utf-8') as f:
             original_metadata = json.load(f)
         
-        # Get all image files
         image_files = list(self.input_images_dir.glob('*.jpg')) + list(self.input_images_dir.glob('*.jpeg'))
         
         if not image_files:
@@ -185,19 +184,15 @@ class DatasetAugmenter:
         
         image_counter = 1
         
-        # Copy original images first
         for image_file in image_files:
             try:
-                # Copy original image
                 output_filename = f"{image_counter:06d}.jpg"
                 output_image_path = self.output_images_dir / output_filename
                 output_caption_path = self.output_captions_dir / f"{image_counter:06d}.txt"
                 
-                # Copy image
                 with Image.open(image_file) as img:
                     img.save(output_image_path, 'JPEG', quality=95, optimize=True)
                 
-                # Copy caption
                 caption_file = self.input_captions_dir / f"{image_file.stem}.txt"
                 if caption_file.exists():
                     with open(caption_file, 'r', encoding='utf-8') as f:
@@ -206,7 +201,6 @@ class DatasetAugmenter:
                     with open(output_caption_path, 'w', encoding='utf-8') as f:
                         f.write(caption)
                     
-                    # Add to metadata
                     new_metadata["images"].append({
                         "id": image_counter,
                         "original_filename": image_file.name,
@@ -223,7 +217,6 @@ class DatasetAugmenter:
                 logger.error(f"Error copying original image {image_file}: {str(e)}")
                 stats["failed_augmentations"] += 1
         
-        # Generate augmented versions
         for image_file in image_files:
             try:
                 caption_file = self.input_captions_dir / f"{image_file.stem}.txt"
@@ -233,25 +226,21 @@ class DatasetAugmenter:
                 with open(caption_file, 'r', encoding='utf-8') as f:
                     original_caption = f.read().strip()
                 
-                # Create multiple augmented versions
                 for aug_idx in range(self.multiplier):
                     with Image.open(image_file) as img:
                         augmented_img, transformations = self._augment_image(img)
                         
-                        # Save augmented image
                         output_filename = f"{image_counter:06d}.jpg"
                         output_image_path = self.output_images_dir / output_filename
                         output_caption_path = self.output_captions_dir / f"{image_counter:06d}.txt"
                         
                         augmented_img.save(output_image_path, 'JPEG', quality=95, optimize=True)
                         
-                        # Modify caption if necessary
                         modified_caption = self._modify_caption_for_augmentation(original_caption, transformations)
                         
                         with open(output_caption_path, 'w', encoding='utf-8') as f:
                             f.write(modified_caption)
                         
-                        # Add to metadata
                         new_metadata["images"].append({
                             "id": image_counter,
                             "original_filename": image_file.name,
@@ -272,7 +261,6 @@ class DatasetAugmenter:
                 logger.error(f"Error augmenting image {image_file}: {str(e)}")
                 stats["failed_augmentations"] += 1
         
-        # Save new metadata
         metadata_output_file = self.output_dir / 'metadata.json'
         with open(metadata_output_file, 'w', encoding='utf-8') as f:
             json.dump(new_metadata, f, indent=2, ensure_ascii=False)

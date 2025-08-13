@@ -23,3 +23,22 @@
 2025-08-14 00:32:06,139 - app.models.image_generator - ERROR - Failed to load model: Cannot load model hf-internal-testing/tiny-stable-diffusion-torch: model is not cached locally and an error occurred while trying to fetch metadata from the Hub. Please check out the root cause in the stacktrace above.
 2025-08-14 00:32:06,140 - app.main - WARNING - Failed to load model on startup - will load on first request
 2025-08-14 00:32:32,410 - app.main - INFO - Logging configured successfully
+2025-08-14 00:34:43,712 - app.main - INFO - Logging configured successfully
+2025-08-14 00:34:43,740 - app.main - INFO - Starting Lexigraph Backend...
+2025-08-14 00:34:43,740 - app.main - INFO - Configuration: Lexigraph API v1.0.0
+2025-08-14 00:34:43,741 - app.main - INFO - Model type: base
+2025-08-14 00:34:43,741 - app.main - INFO - Device: cpu
+2025-08-14 00:34:43,741 - app.main - INFO - Loading model on startup...
+2025-08-14 00:34:43,742 - app.models.image_generator - INFO - Loading model from: .
+2025-08-14 00:34:43,742 - app.models.image_generator - INFO - Model type: base
+2025-08-14 00:34:46,712 - app.models.image_generator - ERROR - Failed to load model: Cannot load model hf-internal-testing/tiny-stable-diffusion-torch: model is not cached locally and an error occurred while trying to fetch metadata from the Hub. Please check out the root cause in the stacktrace above.
+2025-08-14 00:34:46,713 - app.main - WARNING - Failed to load model on startup - will load on first request
+2025-08-14 00:35:00,640 - app.main - INFO - Request: GET /api/v1/health
+2025-08-14 00:35:00,644 - app.main - INFO - Response: 200 - 0.004s
+2025-08-14 00:35:12,009 - app.main - INFO - Request: GET /api/v1/styles
+2025-08-14 00:35:12,012 - app.main - INFO - Response: 200 - 0.002s
+2025-08-14 00:35:31,419 - app.main - INFO - Request: GET /api/v1/job/test123
+2025-08-14 00:35:31,423 - app.main - ERROR - HTTP 401: Invalid API key - GET /api/v1/job/test123
+2025-08-14 00:35:31,424 - app.main - INFO - Response: 401 - 0.005s
+2025-08-14 00:35:43,356 - app.main - INFO - Request: GET /
+2025-08-14 00:35:43,357 - app.main - INFO - Response: 200 - 0.001s

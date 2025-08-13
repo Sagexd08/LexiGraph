@@ -1,6 +1,7 @@
 # Training Requirements for Lexigraph
 torch>=2.0.0
 torchvision>=0.15.0
+torchaudio>=2.0.0
 diffusers>=0.21.0
 transformers>=4.25.0
 accelerate>=0.20.0
@@ -18,3 +19,6 @@ huggingface_hub>=0.16.0
 tqdm>=4.65.0
 matplotlib>=3.7.0
 scipy>=1.10.0
+psutil>=5.9.0
+ftfy>=6.1.0
+opencv-python>=4.8.0
