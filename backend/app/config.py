@@ -21,9 +21,9 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, env="PORT")
     
     # Model Settings
-    model_path: str = Field(default="../training/models/lora_output", env="MODEL_PATH")
+    model_path: str = Field(default="runwayml/stable-diffusion-v1-5", env="MODEL_PATH")
     base_model: str = Field(default="runwayml/stable-diffusion-v1-5", env="BASE_MODEL")
-    model_type: str = Field(default="lora", env="MODEL_TYPE")  # "lora", "dreambooth", "base"
+    model_type: str = Field(default="base", env="MODEL_TYPE")  # "lora", "dreambooth", "base"
     use_safetensors: bool = Field(default=True, env="USE_SAFETENSORS")
     
     # Generation Settings
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     enable_generation_queue: bool = Field(default=False, env="ENABLE_GENERATION_QUEUE")
     
     # Security Settings
-    api_key: Optional[str] = Field(default=None, env="API_KEY")
+    api_key: Optional[str] = Field(default="", env="API_KEY")
     cors_origins: List[str] = Field(default=["*"], env="CORS_ORIGINS")
     
     # Logging Settings

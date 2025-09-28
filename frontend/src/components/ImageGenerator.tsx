@@ -1,40 +1,52 @@
 /**
- * Main Image Generator Component
- * 
- * The core component that handles image generation with a modern, responsive UI.
- * Features prompt input, parameter controls, image display, and generation history.
+ * Production-Ready Image Generator Component for LexiGraph
+ *
+ * Features:
+ * - Advanced prompt input with markdown support
+ * - Real-time generation progress
+ * - Style presets and parameter controls
+ * - Generation history with infinite scroll
+ * - Keyboard shortcuts and accessibility
+ * - Smart caching and error handling
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Wand2, 
-  Download, 
-  Copy, 
-  Settings, 
-  History, 
+import {
+  Wand2,
+  Download,
+  Copy,
+  Settings,
+  History,
   Sparkles,
   AlertCircle,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Share,
+  Heart,
+  Clock,
+  Zap,
+  Image as ImageIcon,
+  ChevronDown,
+  ChevronUp,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import apiService from '../services/api';
-import { 
-  GenerationParams, 
-  GenerationState, 
+import {
+  GenerationParams,
+  GenerationState,
   StylePreset,
   DEFAULT_PARAMS,
   RESOLUTIONS,
   SCHEDULERS
 } from '../types/api';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-// Import components (will be created)
-// import ParameterControls from './ParameterControls';
-// import ImageDisplay from './ImageDisplay';
-// import HistoryPanel from './HistoryPanel';
-// import StatusBar from './StatusBar';
+import ParameterControls from './ParameterControls';
+import ImageDisplay from './ImageDisplay';
+import HistoryPanel from './HistoryPanel';
+import StatusBar from './StatusBar';
 
 const ImageGenerator: React.FC = () => {
   // State management

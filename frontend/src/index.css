@@ -111,11 +111,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-gray-200 dark:border-gray-700;
   }
-  
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -192,4 +192,160 @@
 /* Gradient text effect */
 .gradient-text {
   @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+/* Enhanced animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  background-size: 200px 100%;
+}
+
+/* Enhanced glass morphism */
+.glass-card {
+  @apply bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border border-white/20 dark:border-gray-700/20 shadow-xl;
+}
+
+/* Improved focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900;
+}
+
+/* Custom scrollbar for webkit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 dark:hover:bg-gray-500;
+}
+
+/* Enhanced button hover effects */
+.btn-hover-lift {
+  @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
+}
+
+/* Gradient borders */
+.gradient-border {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #4f46e5, #7c3aed) border-box;
+  border: 2px solid transparent;
+}
+
+.dark .gradient-border {
+  background: linear-gradient(rgb(31, 41, 55), rgb(31, 41, 55)) padding-box,
+              linear-gradient(45deg, #4f46e5, #7c3aed) border-box;
+}
+
+/* Text selection */
+::selection {
+  @apply bg-indigo-100 dark:bg-indigo-900 text-indigo-900 dark:text-indigo-100;
+}
+
+/* Enhanced loading states */
+.skeleton {
+  @apply bg-gray-200 dark:bg-gray-700 animate-pulse rounded;
+}
+
+.skeleton-text {
+  @apply skeleton h-4 w-full mb-2;
+}
+
+.skeleton-avatar {
+  @apply skeleton h-12 w-12 rounded-full;
+}
+
+/* Improved form elements */
+.form-input-enhanced {
+  @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600
+         focus:border-indigo-500 dark:focus:border-indigo-400
+         focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800
+         transition-all duration-200 outline-none
+         bg-white dark:bg-gray-700
+         text-gray-900 dark:text-white
+         placeholder-gray-500 dark:placeholder-gray-400;
+}
+
+/* Enhanced card styles */
+.card-enhanced {
+  @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700
+         hover:shadow-md transition-shadow duration-200;
+}
+
+/* Responsive text sizes */
+.text-responsive-xl {
+  @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+}
+
+.text-responsive-lg {
+  @apply text-xl sm:text-2xl md:text-3xl;
+}
+
+.text-responsive-md {
+  @apply text-lg sm:text-xl md:text-2xl;
 }

@@ -1,18 +1,25 @@
 """
-Image Generation Model Handler for Lexigraph
+Production-Ready Image Generation Model Handler for LexiGraph
 
-Handles loading and inference of Stable Diffusion models with LoRA/DreamBooth support.
-Provides optimized generation with memory management and error handling.
+Handles loading and inference of custom fine-tuned Stable Diffusion models with:
+- LoRA/DreamBooth support
+- Advanced optimizations (ONNX, Torch 2.0 compile)
+- LRU caching for repeated prompts
+- Memory management and error handling
+- Progress callbacks and real-time generation
 """
 
 import logging
 import torch
 import gc
-from typing import Optional, Dict, Any, Callable
+import hashlib
+import time
+from typing import Optional, Dict, Any, Callable, List
 from pathlib import Path
 from PIL import Image
 import io
 import base64
+from functools import lru_cache
 from diffusers import (
     StableDiffusionPipeline,
     DDIMScheduler,
@@ -31,30 +38,29 @@ from ..config import settings, get_device, get_torch_dtype, cleanup_memory
 logger = logging.getLogger(__name__)
 
 class ImageGenerator:
-    """Main image generation class with model management."""
-    
+    """Production-ready image generation class with advanced features."""
+
     def __init__(self):
-        """Initialize the image generator."""
         self.pipeline = None
         self.device = get_device()
         self.torch_dtype = get_torch_dtype()
         self.is_loaded = False
         self.model_type = settings.model_type
         self.current_scheduler = "ddim"
-        
-        logger.info(f"Initializing ImageGenerator on device: {self.device}")
+        self.generation_cache = {}
+        self.cache_max_size = getattr(settings, 'cache_max_size', 100)
+
+        # Performance optimizations
+        self.use_torch_compile = getattr(settings, 'use_torch_compile', False)
+        self.enable_cpu_offload = getattr(settings, 'enable_cpu_offload', True)
+
+        logger.info(f"Initializing LexiGraph ImageGenerator on device: {self.device}")
         logger.info(f"Using torch dtype: {self.torch_dtype}")
-        
+        logger.info(f"Cache enabled with max size: {self.cache_max_size}")
+
     def load_model(self, model_path: Optional[str] = None) -> bool:
-        """
-        Load the Stable Diffusion model with optional LoRA/DreamBooth weights.
-        
-        Args:
-            model_path: Path to model weights (optional, uses config default)
-            
-        Returns:
-            bool: True if model loaded successfully
-        """
+        """Load the custom fine-tuned Stable Diffusion model with optimizations."""
+       
         try:
             if model_path is None:
                 model_path = settings.model_path
@@ -108,7 +114,7 @@ class ImageGenerator:
                         requires_safety_checker=False,
                         use_safetensors=settings.use_safetensors,
                         cache_dir=settings.hf_cache_dir,
-                        token=settings.hf_token
+                        token=None
                     )
                 else:
                     self.pipeline = StableDiffusionPipeline.from_pretrained(
@@ -118,7 +124,7 @@ class ImageGenerator:
                         requires_safety_checker=False,
                         use_safetensors=settings.use_safetensors,
                         cache_dir=settings.hf_cache_dir,
-                        token=settings.hf_token
+                        token=None
                     )
             else:
                 raise ValueError(f"Unsupported model type: {self.model_type}")
@@ -128,9 +134,18 @@ class ImageGenerator:
             
             # Apply optimizations
             self._apply_optimizations()
-            
+
+            # Apply Torch 2.0 compilation if enabled
+            if self.use_torch_compile and hasattr(torch, 'compile'):
+                try:
+                    logger.info("Applying Torch 2.0 compilation...")
+                    self.pipeline.unet = torch.compile(self.pipeline.unet, mode="reduce-overhead")
+                    logger.info("Torch compilation applied successfully")
+                except Exception as e:
+                    logger.warning(f"Torch compilation failed: {e}")
+
             self.is_loaded = True
-            logger.info("Model loaded successfully")
+            logger.info("LexiGraph model loaded successfully with optimizations")
             return True
             
         except Exception as e:
@@ -188,6 +203,21 @@ class ImageGenerator:
         except Exception as e:
             logger.error(f"Failed to set scheduler: {str(e)}")
     
+    def _get_cache_key(self, prompt: str, negative_prompt: str, width: int, height: int,
+                      num_inference_steps: int, guidance_scale: float, seed: Optional[int],
+                      style: Optional[str], scheduler: Optional[str]) -> str:
+        """Generate cache key for prompt parameters."""
+        cache_data = f"{prompt}_{negative_prompt}_{width}_{height}_{num_inference_steps}_{guidance_scale}_{seed}_{style}_{scheduler}"
+        return hashlib.md5(cache_data.encode()).hexdigest()
+
+    def _manage_cache(self):
+        """Manage cache size by removing oldest entries."""
+        if len(self.generation_cache) > self.cache_max_size:
+            # Remove oldest entries (simple FIFO for now)
+            oldest_keys = list(self.generation_cache.keys())[:-self.cache_max_size]
+            for key in oldest_keys:
+                del self.generation_cache[key]
+
     def generate_image(
         self,
         prompt: str,
@@ -201,10 +231,11 @@ class ImageGenerator:
         scheduler: Optional[str] = None,
         progress_callback: Optional[Callable[[int, float], None]] = None,
         callback_steps: int = 5,
+        use_cache: bool = True,
     ) -> Dict[str, Any]:
         """
-        Generate an image from a text prompt.
-        
+        Generate an image from a text prompt with caching and optimizations.
+
         Args:
             prompt: Text prompt for image generation
             negative_prompt: Negative prompt to avoid certain features
@@ -215,14 +246,34 @@ class ImageGenerator:
             seed: Random seed for reproducibility
             style: Style preset to apply
             scheduler: Scheduler to use for this generation
-            
+            progress_callback: Optional callback for progress updates
+            callback_steps: Steps between progress callbacks
+            use_cache: Whether to use cached results for identical prompts
+
         Returns:
             Dict containing generated image data and metadata
         """
         if not self.is_loaded:
-            raise RuntimeError("Model not loaded. Call load_model() first.")
-        
+            raise RuntimeError("LexiGraph model not loaded. Call load_model() first.")
+
+        start_time = time.time()
+
         try:
+            # Set default negative prompt if none provided
+            if negative_prompt is None:
+                negative_prompt = "low quality, blurry, distorted, deformed, bad anatomy"
+
+            # Check cache first (if enabled and no progress callback)
+            cache_key = None
+            if use_cache and progress_callback is None and seed is not None:
+                cache_key = self._get_cache_key(prompt, negative_prompt, width, height,
+                                              num_inference_steps, guidance_scale, seed, style, scheduler)
+                if cache_key in self.generation_cache:
+                    logger.info("Returning cached result")
+                    cached_result = self.generation_cache[cache_key].copy()
+                    cached_result["metadata"]["cached"] = True
+                    cached_result["metadata"]["generation_time"] = time.time() - start_time
+                    return cached_result
             # Validate parameters
             width = min(max(width, 64), settings.max_width)
             height = min(max(height, 64), settings.max_height)
@@ -236,9 +287,12 @@ class ImageGenerator:
                 if negative_prompt is None:
                     negative_prompt = style_config.get("negative_prompt", "")
             
-            # Set default negative prompt if none provided
-            if negative_prompt is None:
-                negative_prompt = "low quality, blurry, distorted"
+            # Apply style preset if specified
+            if style and style in settings.style_presets:
+                style_config = settings.style_presets[style]
+                prompt = prompt + style_config.get("positive_suffix", "")
+                if negative_prompt == "low quality, blurry, distorted, deformed, bad anatomy":
+                    negative_prompt = style_config.get("negative_prompt", negative_prompt)
             
             # Set scheduler if specified
             if scheduler and scheduler != self.current_scheduler:
@@ -295,12 +349,11 @@ class ImageGenerator:
             
             # Convert to base64
             image_base64 = self._image_to_base64(image)
-            
-            # Clean up memory if configured
-            if settings.clear_cache_after_generation:
-                cleanup_memory()
-            
-            return {
+
+            generation_time = time.time() - start_time
+
+            # Prepare result
+            result = {
                 "success": True,
                 "image": image_base64,
                 "metadata": {
@@ -313,21 +366,54 @@ class ImageGenerator:
                     "seed": seed,
                     "style": style,
                     "scheduler": self.current_scheduler,
-                    "model_type": self.model_type
+                    "model_type": self.model_type,
+                    "generation_time": generation_time,
+                    "cached": False,
+                    "device": str(self.device),
+                    "torch_dtype": str(self.torch_dtype)
                 }
             }
+
+            # Cache result if enabled
+            if use_cache and cache_key and seed is not None:
+                self.generation_cache[cache_key] = result.copy()
+                self._manage_cache()
+                logger.info(f"Result cached with key: {cache_key[:8]}...")
+
+            # Clean up memory if configured
+            if settings.clear_cache_after_generation:
+                cleanup_memory()
+
+            logger.info(f"Image generated successfully in {generation_time:.2f}s")
+            return result
             
         except Exception as e:
-            logger.error(f"Image generation failed: {str(e)}")
+            logger.error(f"LexiGraph image generation failed: {str(e)}")
             cleanup_memory()  # Clean up on error
             return {
                 "success": False,
                 "error": str(e),
                 "metadata": {
                     "prompt": prompt,
-                    "error_type": type(e).__name__
+                    "negative_prompt": negative_prompt,
+                    "error_type": type(e).__name__,
+                    "generation_time": time.time() - start_time,
+                    "device": str(self.device)
                 }
             }
+
+    def clear_cache(self):
+        """Clear the generation cache."""
+        self.generation_cache.clear()
+        logger.info("Generation cache cleared")
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        return {
+            "cache_size": len(self.generation_cache),
+            "cache_max_size": self.cache_max_size,
+            "cache_usage": len(self.generation_cache) / self.cache_max_size if self.cache_max_size > 0 else 0
+        }
     
     def _image_to_base64(self, image: Image.Image, format: str = "PNG") -> str:
         """

@@ -1,11 +1,15 @@
 import logging
 import asyncio
 import time
-from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, status, Header
+import sqlite3
+from typing import Optional, Dict, Any, List
+from datetime import datetime
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, status, Header, Query
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 import psutil
+from pathlib import Path
 
 from ..models.image_generator import image_generator
 from ..config import settings, get_memory_info, cleanup_memory
@@ -14,6 +18,20 @@ from ..utils.job_queue import job_queue
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+def create_cors_response(content, status_code=200):
+    """Create a response with CORS headers"""
+    response = JSONResponse(content=content, status_code=status_code)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+@router.options("/{path:path}")
+async def options_handler(path: str):
+    """Handle preflight OPTIONS requests"""
+    return create_cors_response({"message": "OK"})
 
 class GenerateImageRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=settings.max_prompt_length, description="Text prompt for image generation")
@@ -25,14 +43,15 @@ class GenerateImageRequest(BaseModel):
     seed: Optional[int] = Field(None, ge=0, le=2**32-1, description="Random seed for reproducibility")
     style: Optional[str] = Field(None, description="Style preset to apply")
     scheduler: Optional[str] = Field(default="ddim", description="Scheduler to use")
-    
+    use_cache: bool = Field(default=True, description="Whether to use cached results")
+
     @field_validator('width', 'height')
     @classmethod
     def validate_dimensions(cls, v):
         if v % 8 != 0:
             raise ValueError("Width and height must be multiples of 8")
         return v
-    
+
     @field_validator('style')
     @classmethod
     def validate_style(cls, v):
@@ -41,7 +60,7 @@ class GenerateImageRequest(BaseModel):
             available_styles = list(settings.style_presets.keys())
             raise ValueError(f"Invalid style. Available styles: {available_styles}")
         return v
-    
+
     @field_validator('scheduler')
     @classmethod
     def validate_scheduler(cls, v):
@@ -49,6 +68,38 @@ class GenerateImageRequest(BaseModel):
         if v not in valid_schedulers:
             raise ValueError(f"Invalid scheduler. Available schedulers: {valid_schedulers}")
         return v
+
+def save_generation_history(request: GenerateImageRequest, result: Dict[str, Any]):
+    """Save generation to history database."""
+    try:
+        conn = sqlite3.connect("lexigraph_history.db")
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO generation_history
+            (prompt, negative_prompt, width, height, num_inference_steps,
+             guidance_scale, seed, style, scheduler, generation_time,
+             image_hash, success)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            request.prompt,
+            request.negative_prompt,
+            request.width,
+            request.height,
+            request.num_inference_steps,
+            request.guidance_scale,
+            request.seed,
+            request.style,
+            request.scheduler,
+            result.get("metadata", {}).get("generation_time", 0),
+            result.get("image", "")[:32] if result.get("image") else "",  # First 32 chars as hash
+            result.get("success", False)
+        ))
+
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Failed to save generation history: {e}")
 
 class GenerateImageResponse(BaseModel):
     success: bool
@@ -74,7 +125,7 @@ class SystemInfoResponse(BaseModel):
     settings: Dict[str, Any]
 
 async def verify_api_key(api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
-    if settings.api_key is not None:
+    if settings.api_key is not None and settings.api_key != "":
         if api_key != settings.api_key:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -138,8 +189,12 @@ async def generate_image(
                 guidance_scale=request.guidance_scale,
                 seed=request.seed,
                 style=request.style,
-                scheduler=request.scheduler
+                scheduler=request.scheduler,
+                use_cache=request.use_cache
             )
+
+            # Save to history
+            save_generation_history(request, result)
             
             generation_time = time.time() - start_time
             
@@ -302,6 +357,142 @@ async def get_job_status(job_id: str, authenticated: bool = Depends(verify_api_k
         raise HTTPException(status_code=404, detail="Job not found")
     return status_info
 
+@router.get("/history")
+async def get_generation_history(
+    limit: int = Query(default=50, ge=1, le=200, description="Number of records to return"),
+    offset: int = Query(default=0, ge=0, description="Number of records to skip"),
+    authenticated: bool = Depends(verify_api_key)
+):
+    """
+    Get generation history with pagination.
+
+    Returns previously generated images with their parameters and metadata.
+    """
+    try:
+        conn = sqlite3.connect("lexigraph_history.db")
+        cursor = conn.cursor()
+
+        # Get total count
+        cursor.execute("SELECT COUNT(*) FROM generation_history")
+        total_count = cursor.fetchone()[0]
+
+        # Get paginated results
+        cursor.execute("""
+            SELECT id, prompt, negative_prompt, width, height, num_inference_steps,
+                   guidance_scale, seed, style, scheduler, generation_time,
+                   created_at, success
+            FROM generation_history
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """, (limit, offset))
+
+        records = cursor.fetchall()
+        conn.close()
+
+        # Format results
+        history = []
+        for record in records:
+            history.append({
+                "id": record[0],
+                "prompt": record[1],
+                "negative_prompt": record[2],
+                "width": record[3],
+                "height": record[4],
+                "num_inference_steps": record[5],
+                "guidance_scale": record[6],
+                "seed": record[7],
+                "style": record[8],
+                "scheduler": record[9],
+                "generation_time": record[10],
+                "created_at": record[11],
+                "success": bool(record[12])
+            })
+
+        return {
+            "success": True,
+            "history": history,
+            "pagination": {
+                "total": total_count,
+                "limit": limit,
+                "offset": offset,
+                "has_more": offset + limit < total_count
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting generation history: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get generation history: {str(e)}"
+        )
+
+@router.delete("/history")
+async def clear_generation_history(authenticated: bool = Depends(verify_api_key)):
+    """
+    Clear all generation history.
+
+    Removes all records from the generation history database.
+    """
+    try:
+        conn = sqlite3.connect("lexigraph_history.db")
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM generation_history")
+        deleted_count = cursor.rowcount
+        conn.commit()
+        conn.close()
+
+        return {
+            "success": True,
+            "message": f"Cleared {deleted_count} history records"
+        }
+
+    except Exception as e:
+        logger.error(f"Error clearing generation history: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to clear generation history: {str(e)}"
+        )
+
+@router.get("/cache/stats")
+async def get_cache_stats(authenticated: bool = Depends(verify_api_key)):
+    """
+    Get cache statistics.
+
+    Returns information about the current generation cache usage.
+    """
+    try:
+        cache_stats = image_generator.get_cache_stats()
+        return {
+            "success": True,
+            "cache_stats": cache_stats
+        }
+    except Exception as e:
+        logger.error(f"Error getting cache stats: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get cache stats: {str(e)}"
+        )
+
+@router.post("/cache/clear")
+async def clear_cache(authenticated: bool = Depends(verify_api_key)):
+    """
+    Clear the generation cache.
+
+    Removes all cached generation results to free memory.
+    """
+    try:
+        image_generator.clear_cache()
+        return {
+            "success": True,
+            "message": "Generation cache cleared successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error clearing cache: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to clear cache: {str(e)}"
+        )
+
 @router.get("/styles")
 async def get_available_styles():
     """
@@ -334,21 +525,21 @@ async def get_available_styles():
 async def health_check():
     """
     Health check endpoint.
-    
+
     Returns basic service status and availability.
     """
     try:
-        return {
+        content = {
             "status": "healthy",
             "service": settings.app_name,
             "version": settings.app_version,
             "model_loaded": image_generator.is_loaded,
             "timestamp": time.time()
         }
+        return create_cors_response(content)
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        return create_cors_response(
             content={
                 "status": "unhealthy",
                 "error": str(e),

@@ -19,7 +19,7 @@ class ApiService {
   private baseURL: string;
   private apiKey?: string;
 
-  constructor(baseURL: string = '/api/v1', apiKey?: string) {
+  constructor(baseURL: string = (import.meta as any).env?.VITE_API_BASE_URL || '/api/v1', apiKey?: string) {
     this.baseURL = baseURL;
     this.apiKey = apiKey;
 
@@ -299,6 +299,56 @@ class ApiService {
     } catch (error) {
       console.error('Failed to copy image to clipboard:', error);
       throw new Error('Failed to copy image to clipboard');
+    }
+  }
+
+  /**
+   * Get generation history
+   */
+  async getGenerationHistory(limit: number = 50, offset: number = 0): Promise<any> {
+    try {
+      const response = await this.client.get('/history', {
+        params: { limit, offset }
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Clear generation history
+   */
+  async clearGenerationHistory(): Promise<any> {
+    try {
+      const response = await this.client.delete('/history');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  async getCacheStats(): Promise<any> {
+    try {
+      const response = await this.client.get('/cache/stats');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Clear generation cache
+   */
+  async clearCache(): Promise<any> {
+    try {
+      const response = await this.client.post('/cache/clear');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
     }
   }
 }
