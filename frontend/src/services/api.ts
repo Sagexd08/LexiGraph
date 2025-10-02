@@ -1,7 +1,4 @@
-/**
- * API service for Lexigraph frontend
- * Handles all communication with the backend API
- */
+
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
@@ -25,14 +22,14 @@ class ApiService {
 
     this.client = axios.create({
       baseURL,
-      timeout: 300000, // 5 minutes for image generation
+      timeout: 300000,
       headers: {
         'Content-Type': 'application/json',
         ...(apiKey && { 'X-API-Key': apiKey }),
       },
     });
 
-    // Request interceptor
+
     this.client.interceptors.request.use(
       (config) => {
         console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
@@ -44,7 +41,7 @@ class ApiService {
       }
     );
 
-    // Response interceptor
+
     this.client.interceptors.response.use(
       (response) => {
         console.log(`API Response: ${response.status} ${response.config.url}`);
@@ -52,8 +49,8 @@ class ApiService {
       },
       (error: AxiosError<ApiError>) => {
         console.error('API Response Error:', error);
-        
-        // Handle specific error cases
+
+
         if (error.response?.status === 401) {
           throw new Error('Authentication failed. Please check your API key.');
         } else if (error.response?.status === 429) {
@@ -67,21 +64,19 @@ class ApiService {
         } else if (error.code === 'NETWORK_ERROR') {
           throw new Error('Network error. Please check your connection.');
         }
-        
+
         throw new Error(error.message || 'An unexpected error occurred');
       }
     );
   }
 
-  /**
-   * Update API configuration
-   */
+
   updateConfig(baseURL?: string, apiKey?: string) {
     if (baseURL) {
       this.baseURL = baseURL;
       this.client.defaults.baseURL = baseURL;
     }
-    
+
     if (apiKey !== undefined) {
       this.apiKey = apiKey;
       if (apiKey) {
@@ -92,9 +87,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Generate an image from a text prompt
-   */
+
   async generateImage(request: GenerateImageRequest): Promise<GenerateImageResponse> {
     try {
       const response = await this.client.post<GenerateImageResponse>('/generate', request);
@@ -105,9 +98,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Get model information
-   */
+
   async getModelInfo(): Promise<ModelInfo> {
     try {
       const response = await this.client.get<ModelInfo>('/model/info');
@@ -118,12 +109,10 @@ class ApiService {
     }
   }
 
-  /**
-   * Load model
-   */
+
   async loadModel(modelPath?: string): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.client.post('/model/load', 
+      const response = await this.client.post('/model/load',
         modelPath ? { model_path: modelPath } : {}
       );
       return response.data;
@@ -133,9 +122,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Unload model
-   */
+
   async unloadModel(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await this.client.post('/model/unload');
@@ -146,9 +133,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Get system information
-   */
+
   async getSystemInfo(): Promise<SystemInfo> {
     try {
       const response = await this.client.get<SystemInfo>('/system/info');
@@ -159,9 +144,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Clean up system memory
-   */
+
   async cleanupMemory(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await this.client.post('/system/cleanup');
@@ -172,9 +155,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Get available style presets
-   */
+
   async getStyles(): Promise<StylesResponse> {
     try {
       const response = await this.client.get<StylesResponse>('/styles');
@@ -185,9 +166,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Health check
-   */
+
   async healthCheck(): Promise<HealthResponse> {
     try {
       const response = await this.client.get<HealthResponse>('/health');
@@ -198,9 +177,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Test API connection
-   */
+
   async testConnection(): Promise<boolean> {
     try {
       await this.healthCheck();
@@ -210,9 +187,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Get API status with detailed information
-   */
+
   async getStatus(): Promise<{
     connected: boolean;
     modelLoaded: boolean;
@@ -239,24 +214,22 @@ class ApiService {
     }
   }
 
-  /**
-   * Download image from base64 data
-   */
+
   downloadImage(imageData: string, filename: string = 'generated-image.png') {
     try {
-      // Extract base64 data
+
       const base64Data = imageData.split(',')[1];
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
-      
+
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-      
+
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'image/png' });
-      
-      // Create download link
+
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -271,28 +244,26 @@ class ApiService {
     }
   }
 
-  /**
-   * Copy image to clipboard
-   */
+
   async copyImageToClipboard(imageData: string): Promise<void> {
     try {
       if (!navigator.clipboard || !window.ClipboardItem) {
         throw new Error('Clipboard API not supported');
       }
 
-      // Extract base64 data and convert to blob
+
       const base64Data = imageData.split(',')[1];
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
-      
+
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-      
+
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'image/png' });
-      
-      // Copy to clipboard
+
+
       await navigator.clipboard.write([
         new ClipboardItem({ 'image/png': blob })
       ]);
@@ -302,35 +273,9 @@ class ApiService {
     }
   }
 
-  /**
-   * Get generation history
-   */
-  async getGenerationHistory(limit: number = 50, offset: number = 0): Promise<any> {
-    try {
-      const response = await this.client.get('/history', {
-        params: { limit, offset }
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
 
-  /**
-   * Clear generation history
-   */
-  async clearGenerationHistory(): Promise<any> {
-    try {
-      const response = await this.client.delete('/history');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
 
-  /**
-   * Get cache statistics
-   */
+
   async getCacheStats(): Promise<any> {
     try {
       const response = await this.client.get('/cache/stats');
@@ -340,9 +285,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Clear generation cache
-   */
+
   async clearCache(): Promise<any> {
     try {
       const response = await this.client.post('/cache/clear');
@@ -353,7 +296,7 @@ class ApiService {
   }
 }
 
-// Create and export singleton instance
+
 const apiService = new ApiService();
 
 export default apiService;

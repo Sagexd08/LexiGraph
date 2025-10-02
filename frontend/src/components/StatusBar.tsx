@@ -1,48 +1,90 @@
-/**
- * Status Bar Component
- * 
- * Displays connection status, model information, and generation statistics
- * at the bottom of the application.
- */
 
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Wifi, 
-  WifiOff, 
-  Cpu, 
-  Zap, 
-  Clock, 
+import {
+  Wifi,
+  WifiOff,
+  Cpu,
+  Zap,
+  Clock,
   Info,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Loader2,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 import apiService from '../services/api';
-import { SystemInfo } from '../types/api';
+import { SystemInfo, HealthResponse } from '../types/api';
 
 interface StatusBarProps {
-  isConnected: boolean;
-  modelLoaded: boolean;
   isGenerating: boolean;
   generationTime: number | null;
+  generationProgress?: number;
+}
+
+interface ConnectionStatus {
+  isConnected: boolean;
+  lastChecked: number;
+  responseTime: number | null;
+  modelLoaded: boolean;
+  error: string | null;
 }
 
 const StatusBar: React.FC<StatusBarProps> = ({
-  isConnected,
-  modelLoaded,
   isGenerating,
   generationTime,
+  generationProgress = 0,
 }) => {
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
+    isConnected: false,
+    lastChecked: 0,
+    responseTime: null,
+    modelLoaded: false,
+    error: null,
+  });
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
-  // Fetch system info periodically
+  // Check backend health
+  const checkHealth = useCallback(async () => {
+    const startTime = Date.now();
+    try {
+      const health = await apiService.getHealth();
+      const responseTime = Date.now() - startTime;
+
+      setConnectionStatus({
+        isConnected: true,
+        lastChecked: Date.now(),
+        responseTime,
+        modelLoaded: health.model_loaded,
+        error: null,
+      });
+    } catch (error) {
+      setConnectionStatus({
+        isConnected: false,
+        lastChecked: Date.now(),
+        responseTime: null,
+        modelLoaded: false,
+        error: error instanceof Error ? error.message : 'Connection failed',
+      });
+    }
+  }, []);
+
+  // Periodic health checks
+  useEffect(() => {
+    checkHealth();
+    const interval = setInterval(checkHealth, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [checkHealth]);
+
   useEffect(() => {
     const fetchSystemInfo = async () => {
-      if (!isConnected) return;
-      
+      if (!connectionStatus.isConnected) return;
+
       try {
         const info = await apiService.getSystemInfo();
         setSystemInfo(info);
@@ -53,41 +95,85 @@ const StatusBar: React.FC<StatusBarProps> = ({
     };
 
     fetchSystemInfo();
-    const interval = setInterval(fetchSystemInfo, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchSystemInfo, 30000);
 
     return () => clearInterval(interval);
-  }, [isConnected]);
+  }, [connectionStatus.isConnected]);
 
   const formatMemory = (bytes: number) => {
     return `${(bytes).toFixed(1)} GB`;
   };
 
   const getConnectionStatus = () => {
-    if (!isConnected) return { text: 'Disconnected', color: 'text-red-600 dark:text-red-400' };
-    if (!modelLoaded) return { text: 'Model Loading', color: 'text-yellow-600 dark:text-yellow-400' };
-    if (isGenerating) return { text: 'Generating', color: 'text-blue-600 dark:text-blue-400' };
-    return { text: 'Ready', color: 'text-green-600 dark:text-green-400' };
+    if (isGenerating) return {
+      text: 'Generating',
+      color: 'text-blue-600 dark:text-blue-400',
+      icon: <Loader2 className="h-4 w-4 animate-spin" />
+    };
+    if (!connectionStatus.isConnected) return {
+      text: 'Disconnected',
+      color: 'text-red-600 dark:text-red-400',
+      icon: <WifiOff className="h-4 w-4" />
+    };
+    if (!connectionStatus.modelLoaded) return {
+      text: 'Model Loading',
+      color: 'text-yellow-600 dark:text-yellow-400',
+      icon: <AlertCircle className="h-4 w-4" />
+    };
+    return {
+      text: 'Connected',
+      color: 'text-green-600 dark:text-green-400',
+      icon: <CheckCircle className="h-4 w-4" />
+    };
   };
 
   const status = getConnectionStatus();
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 z-40">
-      {/* Main Status Bar */}
+      {}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-12">
-          {/* Left Side - Connection Status */}
+          {}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
-              )}
+              {status.icon}
               <span className={`text-sm font-medium ${status.color}`}>
                 {status.text}
               </span>
             </div>
+
+            {/* Generation Progress */}
+            <AnimatePresence>
+              {isGenerating && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="flex items-center space-x-2"
+                >
+                  <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-blue-500 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${generationProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {Math.round(generationProgress)}%
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Response Time */}
+            {connectionStatus.isConnected && connectionStatus.responseTime && (
+              <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                <Zap className="h-4 w-4" />
+                <span>{connectionStatus.responseTime}ms</span>
+              </div>
+            )}
 
             {systemInfo && (
               <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
@@ -114,7 +200,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
             )}
           </div>
 
-          {/* Right Side - Generation Info */}
+          {}
           <div className="flex items-center space-x-4">
             {generationTime && (
               <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
@@ -139,7 +225,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
         </div>
       </div>
 
-      {/* Detailed Information Panel */}
+      {}
       <AnimatePresence>
         {showDetails && systemInfo && (
           <motion.div
@@ -150,7 +236,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
-                {/* Model Information */}
+                {}
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                     Model
@@ -163,7 +249,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
                   </div>
                 </div>
 
-                {/* System Resources */}
+                {}
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                     System
@@ -184,7 +270,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
                   </div>
                 </div>
 
-                {/* GPU Information */}
+                {}
                 {systemInfo.memory_info.gpu_memory && (
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -207,7 +293,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
                   </div>
                 )}
 
-                {/* Optimizations */}
+                {}
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                     Optimizations
@@ -229,7 +315,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
                 </div>
               </div>
 
-              {/* Last Update */}
+              {}
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 text-center">
                 Last updated: {new Date(lastUpdate).toLocaleTimeString()}
               </div>

@@ -1,16 +1,10 @@
-/**
- * Enhanced Prompt Builder Component
- * 
- * Advanced prompt building with templates, suggestions, and AI assistance
- */
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Wand2, 
-  BookOpen, 
-  Plus, 
-  X, 
+import {
+  Wand2,
+  BookOpen,
+  Plus,
+  X,
   Lightbulb,
   Copy,
   Shuffle,
@@ -95,7 +89,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
   const [newTag, setNewTag] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -148,7 +142,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Main Prompt Input */}
+      {}
       <div className="relative">
         <textarea
           ref={textareaRef}
@@ -159,14 +153,14 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
           className="w-full min-h-[120px] px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none transition-all duration-200"
           style={{ height: 'auto' }}
         />
-        
-        {/* Character count */}
+
+        {}
         <div className="absolute bottom-2 right-2 text-xs text-gray-400">
           {value.length} characters
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {}
       <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
@@ -177,7 +171,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         >
           Templates
         </Button>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -187,7 +181,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         >
           Suggestions
         </Button>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -197,7 +191,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         >
           Random
         </Button>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -209,7 +203,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         </Button>
       </div>
 
-      {/* Selected Tags */}
+      {}
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {selectedTags.map((tag) => (
@@ -232,7 +226,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         </div>
       )}
 
-      {/* Custom Tag Input */}
+      {}
       <div className="flex gap-2">
         <Input
           value={newTag}
@@ -251,7 +245,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         </Button>
       </div>
 
-      {/* Suggestions Panel */}
+      {}
       <AnimatePresence>
         {showSuggestions && (
           <motion.div
@@ -279,18 +273,18 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Templates Modal */}
+      {}
       <Modal
         isOpen={showTemplates}
         onClose={() => setShowTemplates(false)}
         title="Prompt Templates"
-        size="lg"
+        size="xl"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
           {categories.map((category) => (
             <div key={category}>
-              <h4 className="font-semibold mb-2">{category}</h4>
-              <div className="grid gap-3">
+              <h4 className="font-semibold mb-2 sticky top-0 bg-white dark:bg-gray-800 py-2 z-10">{category}</h4>
+              <div className="grid gap-3 mb-6">
                 {PROMPT_TEMPLATES
                   .filter(t => t.category === category)
                   .map((template) => (

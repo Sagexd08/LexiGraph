@@ -1,17 +1,12 @@
-/**
- * Image Display Component
- * 
- * Displays generated images with loading states, error handling,
- * and action buttons for download and copy operations.
- */
+
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Download, 
-  Copy, 
-  Loader2, 
-  AlertCircle, 
+import {
+  Download,
+  Copy,
+  Loader2,
+  AlertCircle,
   Image as ImageIcon,
   ZoomIn,
   ZoomOut,
@@ -51,13 +46,13 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      {/* Header */}
+      {}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Generated Image
           </h3>
-          
+
           {image && (
             <div className="flex items-center space-x-2">
               <button
@@ -67,7 +62,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
               >
                 <Info className="h-4 w-4" />
               </button>
-              
+
               <button
                 onClick={onCopy}
                 className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -75,7 +70,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
               >
                 <Copy className="h-4 w-4" />
               </button>
-              
+
               <button
                 onClick={onDownload}
                 className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center space-x-2"
@@ -88,7 +83,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
         </div>
       </div>
 
-      {/* Image Container */}
+      {}
       <div className="relative aspect-square bg-gray-50 dark:bg-gray-900">
         <AnimatePresence mode="wait">
           {isGenerating && (
@@ -167,7 +162,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
-              
+
               {!imageLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                   <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
@@ -178,7 +173,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Metadata Panel */}
+      {}
       <AnimatePresence>
         {showMetadata && metadata && (
           <motion.div
@@ -191,7 +186,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
                 Generation Details
               </h4>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Prompt:</span>
@@ -199,7 +194,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     {metadata.prompt}
                   </p>
                 </div>
-                
+
                 {metadata.negative_prompt && (
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Negative Prompt:</span>
@@ -208,35 +203,35 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     </p>
                   </div>
                 )}
-                
+
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Resolution:</span>
                   <p className="text-gray-900 dark:text-white mt-1">
                     {metadata.width} × {metadata.height}
                   </p>
                 </div>
-                
+
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Steps:</span>
                   <p className="text-gray-900 dark:text-white mt-1">
                     {metadata.num_inference_steps}
                   </p>
                 </div>
-                
+
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Guidance Scale:</span>
                   <p className="text-gray-900 dark:text-white mt-1">
                     {metadata.guidance_scale}
                   </p>
                 </div>
-                
+
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Scheduler:</span>
                   <p className="text-gray-900 dark:text-white mt-1">
                     {metadata.scheduler}
                   </p>
                 </div>
-                
+
                 {metadata.seed && (
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Seed:</span>
@@ -245,7 +240,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     </p>
                   </div>
                 )}
-                
+
                 {metadata.style && (
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Style:</span>
@@ -254,7 +249,7 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({
                     </p>
                   </div>
                 )}
-                
+
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Model:</span>
                   <p className="text-gray-900 dark:text-white mt-1">

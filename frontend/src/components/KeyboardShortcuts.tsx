@@ -1,8 +1,4 @@
-/**
- * Keyboard Shortcuts Component
- * 
- * Display and manage keyboard shortcuts for the application
- */
+
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,25 +12,25 @@ interface Shortcut {
 }
 
 const SHORTCUTS: Shortcut[] = [
-  // Generation
+
   { key: 'Ctrl+Enter', description: 'Generate image', category: 'generation' },
   { key: 'Ctrl+R', description: 'Random seed', category: 'generation' },
   { key: 'Ctrl+D', description: 'Download image', category: 'generation' },
   { key: 'Ctrl+C', description: 'Copy image', category: 'generation' },
-  
-  // Navigation
+
+
   { key: 'Ctrl+H', description: 'Toggle history panel', category: 'navigation' },
   { key: 'Ctrl+S', description: 'Toggle settings', category: 'navigation' },
   { key: 'Ctrl+B', description: 'Open batch generator', category: 'navigation' },
   { key: 'Tab', description: 'Navigate between tabs', category: 'navigation' },
-  
-  // Editing
+
+
   { key: 'Ctrl+Z', description: 'Undo last change', category: 'editing' },
   { key: 'Ctrl+Y', description: 'Redo last change', category: 'editing' },
   { key: 'Ctrl+A', description: 'Select all text', category: 'editing' },
   { key: 'Escape', description: 'Clear selection/close modal', category: 'editing' },
-  
-  // General
+
+
   { key: 'Ctrl+/', description: 'Show keyboard shortcuts', category: 'general' },
   { key: 'Ctrl+T', description: 'Toggle theme', category: 'general' },
   { key: 'F11', description: 'Toggle fullscreen', category: 'general' },
@@ -92,7 +88,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, onClose }
       size="lg"
     >
       <div className="space-y-6">
-        {/* Search and Filter */}
+        {}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <input
@@ -116,7 +112,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, onClose }
           </select>
         </div>
 
-        {/* Shortcuts List */}
+        {}
         <div className="space-y-6">
           {Object.entries(groupedShortcuts).map(([category, shortcuts]) => (
             <div key={category}>
@@ -154,7 +150,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, onClose }
           </div>
         )}
 
-        {/* Tips */}
+        {}
         <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <div className="flex items-start space-x-3">
             <Command className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
@@ -175,7 +171,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, onClose }
   );
 };
 
-// Hook for managing keyboard shortcuts
+
 export const useKeyboardShortcuts = () => {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 

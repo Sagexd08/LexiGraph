@@ -1,16 +1,12 @@
-/**
- * Theme Customizer Component
- * 
- * Advanced theme customization with color schemes and layout options
- */
+
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Palette, 
-  Sun, 
-  Moon, 
-  Monitor, 
+import {
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
   Paintbrush,
   Eye,
   RotateCcw,
@@ -186,8 +182,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         surface: customColors.surface || '#F8FAFC',
         text: customColors.text || '#1F2937'
       };
-      
-      // In a real app, you'd save this to localStorage or a backend
+
+
       COLOR_SCHEMES.push(newScheme);
       setPreviewTheme(prev => ({ ...prev, colorScheme: newScheme.id }));
       setIsCreatingCustom(false);
@@ -205,8 +201,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
       size="xl"
     >
       <div className="space-y-6">
-        {/* Preview */}
-        <Card 
+        {}
+        <Card
           className="p-6"
           style={{
             backgroundColor: selectedScheme.background,
@@ -218,19 +214,19 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         >
           <h3 className="text-lg font-semibold mb-4">Theme Preview</h3>
           <div className="grid grid-cols-3 gap-4">
-            <div 
+            <div
               className="p-4 rounded"
               style={{ backgroundColor: selectedScheme.primary, color: 'white' }}
             >
               Primary
             </div>
-            <div 
+            <div
               className="p-4 rounded"
               style={{ backgroundColor: selectedScheme.secondary, color: 'white' }}
             >
               Secondary
             </div>
-            <div 
+            <div
               className="p-4 rounded"
               style={{ backgroundColor: selectedScheme.accent, color: 'white' }}
             >
@@ -239,7 +235,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </div>
         </Card>
 
-        {/* Color Schemes */}
+        {}
         <div>
           <h4 className="font-semibold mb-3">Color Schemes</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -254,15 +250,15 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 }`}
               >
                 <div className="flex space-x-1 mb-2">
-                  <div 
+                  <div
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: scheme.primary }}
                   />
-                  <div 
+                  <div
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: scheme.secondary }}
                   />
-                  <div 
+                  <div
                     className="w-4 h-4 rounded"
                     style={{ backgroundColor: scheme.accent }}
                   />
@@ -270,7 +266,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 <div className="text-sm font-medium">{scheme.name}</div>
               </button>
             ))}
-            
+
             <button
               onClick={() => setIsCreatingCustom(true)}
               className="p-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 transition-colors flex flex-col items-center justify-center"
@@ -281,7 +277,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </div>
         </div>
 
-        {/* Theme Mode */}
+        {}
         <div>
           <h4 className="font-semibold mb-3">Theme Mode</h4>
           <div className="flex space-x-2">
@@ -302,7 +298,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </div>
         </div>
 
-        {/* Layout Options */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h4 className="font-semibold mb-3">Border Radius</h4>
@@ -332,7 +328,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </div>
         </div>
 
-        {/* Advanced Options */}
+        {}
         <div>
           <h4 className="font-semibold mb-3">Advanced Options</h4>
           <div className="space-y-3">
@@ -345,7 +341,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               />
               <span>Enable animations</span>
             </label>
-            
+
             <label className="flex items-center space-x-3">
               <input
                 type="checkbox"
@@ -358,7 +354,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </div>
         </div>
 
-        {/* Actions */}
+        {}
         <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button
             onClick={applyTheme}
@@ -366,7 +362,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           >
             Apply Theme
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={resetToDefault}
@@ -374,7 +370,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           >
             Reset
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={exportTheme}
@@ -382,7 +378,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           >
             Export
           </Button>
-          
+
           <div className="relative">
             <input
               type="file"
@@ -400,7 +396,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         </div>
       </div>
 
-      {/* Custom Color Scheme Modal */}
+      {}
       <Modal
         isOpen={isCreatingCustom}
         onClose={() => setIsCreatingCustom(false)}
@@ -415,7 +411,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             onChange={(e) => setCustomColors(prev => ({ ...prev, name: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700"
           />
-          
+
           {[
             { key: 'primary', label: 'Primary Color' },
             { key: 'secondary', label: 'Secondary Color' },
@@ -438,7 +434,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               />
             </div>
           ))}
-          
+
           <div className="flex gap-2 pt-4">
             <Button onClick={createCustomScheme}>Create Scheme</Button>
             <Button variant="outline" onClick={() => setIsCreatingCustom(false)}>Cancel</Button>

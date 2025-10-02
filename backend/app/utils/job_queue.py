@@ -45,7 +45,7 @@ class InMemoryJobQueue:
             try:
                 job.status = JobStatus.RUNNING
                 job.started_at = time.time()
-                # Inject a progress callback into kwargs if supported
+
                 def _progress(pct: int, frac: float):
                     job.progress_pct = max(0, min(100, int(pct)))
                 job.kwargs.setdefault("progress_callback", _progress)
@@ -89,6 +89,6 @@ class InMemoryJobQueue:
             "finished_at": job.finished_at,
         }
 
-# Singleton queue instance configured elsewhere
+
 job_queue = InMemoryJobQueue()
 

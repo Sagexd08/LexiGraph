@@ -1,6 +1,4 @@
-/**
- * TypeScript type definitions for Lexigraph API
- */
+
 
 export interface GenerateImageRequest {
   prompt: string;
@@ -12,6 +10,7 @@ export interface GenerateImageRequest {
   seed?: number;
   style?: string;
   scheduler?: string;
+  use_cache?: boolean;
 }
 
 export interface GenerateImageResponse {
@@ -111,7 +110,7 @@ export interface ApiError {
   };
 }
 
-// Generation parameters with validation
+
 export interface GenerationParams {
   prompt: string;
   negativePrompt: string;
@@ -124,7 +123,7 @@ export interface GenerationParams {
   scheduler: string;
 }
 
-// UI State types
+
 export interface GenerationState {
   isGenerating: boolean;
   progress: number;
@@ -143,7 +142,7 @@ export interface AppSettings {
   defaultParams: Partial<GenerationParams>;
 }
 
-// History types
+
 export interface GenerationHistoryItem {
   id: string;
   timestamp: number;
@@ -165,7 +164,7 @@ export interface HistoryFilter {
   favorites: boolean;
 }
 
-// Component props types
+
 export interface ImageDisplayProps {
   image: string | null;
   isGenerating: boolean;
@@ -190,7 +189,7 @@ export interface HistoryPanelProps {
   onItemToggleFavorite: (id: string) => void;
 }
 
-// Utility types
+
 export type Resolution = {
   width: number;
   height: number;
@@ -203,7 +202,7 @@ export type Scheduler = {
   description: string;
 };
 
-// Constants
+
 export const RESOLUTIONS: Resolution[] = [
   { width: 512, height: 512, label: '512×512 (Square)' },
   { width: 768, height: 768, label: '768×768 (Square HD)' },
@@ -229,6 +228,46 @@ export const DEFAULT_PARAMS: GenerationParams = {
   steps: 20,
   guidanceScale: 7.5,
   seed: null,
-  style: '',
+  style: 'realistic',
   scheduler: 'ddim',
 };
+
+// Backend validation constraints - Updated to match user requirements
+export const VALIDATION_CONSTRAINTS = {
+  prompt: {
+    minLength: 1,
+    maxLength: 2000, // Updated to 1-2000 characters as per requirements
+  },
+  dimensions: {
+    min: 64,
+    max: 1024, // Range 64-1024px as per requirements
+    multipleOf: 8, // Must be multiples of 8
+  },
+  steps: {
+    min: 1,
+    max: 100, // Range 1-100 as per requirements
+  },
+  guidanceScale: {
+    min: 1.0,
+    max: 20.0, // Range 1.0-20.0 as per requirements
+  },
+  seed: {
+    min: 0,
+    max: Math.pow(2, 32) - 1, // 0 to 2^32-1 as per requirements
+  },
+  validSchedulers: ['ddim', 'dpm', 'euler', 'euler_a'], // As per requirements
+  validStyles: ['realistic', 'artistic', 'anime', 'portrait', 'landscape'], // Based on backend style_presets
+};
+
+// Validation error types
+export interface ValidationError {
+  field: string;
+  message: string;
+  value: any;
+}
+
+// Validation result
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+}

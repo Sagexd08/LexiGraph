@@ -3,9 +3,15 @@ import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SunIcon, MoonIcon, Cog6ToothIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
-import EnhancedImageGenerator from './components/EnhancedImageGenerator';
+import EnhancedImageGenerator from './components/enhanced/EnhancedImageGenerator';
 import SettingsPanel from './components/SettingsPanel';
+import ModernApp from './components/ModernApp';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import { AccessibilityProvider } from './components/common/AccessibilityProvider';
+import { QueryProvider, QueryErrorBoundary } from './lib/react-query';
+import { useAppStore } from './store';
+import { useOfflineSupport, useServiceWorker } from './hooks/useOffline';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -14,8 +20,15 @@ const App: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [useModernUI, setUseModernUI] = useLocalStorage<boolean>('use-modern-ui', true);
 
-  // Handle theme changes
+  // Initialize store and offline support
+  const { setTheme: setStoreTheme } = useAppStore();
+  const { isOnline, hasPendingActions } = useOfflineSupport();
+  useServiceWorker();
+
+  // Auth is disabled for now
+
   useEffect(() => {
     const updateTheme = () => {
       if (theme === 'system') {
@@ -28,7 +41,6 @@ const App: React.FC = () => {
 
     updateTheme();
 
-    // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
       if (theme === 'system') {
@@ -40,7 +52,6 @@ const App: React.FC = () => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  // Apply theme to document
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -49,14 +60,15 @@ const App: React.FC = () => {
     }
   }, [isDark]);
 
-  // Simulate app initialization
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1200);
     return () => clearTimeout(timer);
   }, []);
 
   const toggleTheme = () => {
-    setTheme(isDark ? 'light' : 'dark');
+    const newTheme = isDark ? 'light' : 'dark';
+    setTheme(newTheme);
+    setStoreTheme(newTheme);
   };
 
   if (isLoading) {
@@ -98,21 +110,52 @@ const App: React.FC = () => {
     );
   }
 
+
+
+  // Use modern UI by default
+  if (useModernUI) {
+    return (
+      <QueryProvider>
+        <QueryErrorBoundary>
+          <ErrorBoundary>
+            <AccessibilityProvider>
+              <ModernApp />
+              {/* Offline status indicator */}
+              {!isOnline && (
+                <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    <span>Offline Mode</span>
+                    {hasPendingActions && <span className="text-xs">(Actions queued)</span>}
+                  </div>
+                </div>
+              )}
+            </AccessibilityProvider>
+          </ErrorBoundary>
+        </QueryErrorBoundary>
+      </QueryProvider>
+    );
+  }
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDark
-        ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900'
-        : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'
-    }`}>
+    <QueryProvider>
+      <QueryErrorBoundary>
+        <ErrorBoundary>
+          <AccessibilityProvider>
+            <div className={`min-h-screen transition-colors duration-300 ${
+              isDark
+                ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900'
+                : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'
+            }`} id="main-content">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        {}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-8 relative"
         >
-          {/* Theme Toggle */}
+          {}
           <div className="absolute top-0 right-0 flex gap-2">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -147,10 +190,10 @@ const App: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-5xl md:text-7xl font-bold mb-6"
+            className="text-5xl md:text-6xl font-bold mb-6 tracking-tight"
           >
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-              LexiGraph
+            <span className={`${isDark ? 'text-white' : 'text-gray-900'}`}>
+              🎨 LexiGraph
             </span>
           </motion.h1>
 
@@ -158,21 +201,27 @@ const App: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className={`text-xl md:text-2xl max-w-3xl mx-auto mb-6 ${
+            className={`text-xl md:text-2xl max-w-3xl mx-auto mb-8 ${
               isDark ? 'text-gray-300' : 'text-gray-600'
             }`}
           >
-            Transform your imagination into stunning visuals with our custom fine-tuned AI model
+            Professional AI image generation with advanced controls and templates
           </motion.p>
 
-          {/* Feature badges */}
+          {}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
             className="flex flex-wrap justify-center gap-3"
           >
-            {['Custom LoRA Model', 'Real-time Progress', 'Style Presets', 'Generation History', 'Smart Caching'].map((feature, index) => (
+            {[
+              'Custom Templates',
+              'Real-time Progress',
+              'Style Presets',
+              'Generation History',
+              'Smart Caching'
+            ].map((feature, index) => (
               <motion.span
                 key={feature}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -180,8 +229,8 @@ const App: React.FC = () => {
                 transition={{ delay: 0.6 + index * 0.1, duration: 0.4 }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   isDark
-                    ? 'bg-purple-900/30 text-purple-300 border border-purple-700/50 hover:bg-purple-800/40'
-                    : 'bg-purple-100/80 text-purple-700 border border-purple-200 hover:bg-purple-200/80'
+                    ? 'bg-gray-800/50 text-gray-300 border border-gray-700/50 hover:bg-gray-700/50'
+                    : 'bg-gray-100/80 text-gray-700 border border-gray-200 hover:bg-gray-200/80'
                 } backdrop-blur-sm`}
               >
                 {feature}
@@ -190,7 +239,7 @@ const App: React.FC = () => {
           </motion.div>
         </motion.header>
 
-        {/* Main Content */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -200,7 +249,7 @@ const App: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Settings Panel */}
+      {}
       <AnimatePresence>
         {showSettings && (
           <SettingsPanel
@@ -213,7 +262,7 @@ const App: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Toast Notifications */}
+      {}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -243,7 +292,21 @@ const App: React.FC = () => {
           },
         }}
       />
-    </div>
+            </div>
+            {/* Offline status indicator */}
+            {!isOnline && (
+              <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <span>Offline Mode</span>
+                  {hasPendingActions && <span className="text-xs">(Actions queued)</span>}
+                </div>
+              </div>
+            )}
+          </AccessibilityProvider>
+        </ErrorBoundary>
+      </QueryErrorBoundary>
+    </QueryProvider>
   );
 };
 

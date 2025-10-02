@@ -1,16 +1,12 @@
-/**
- * Performance Monitor Component
- * 
- * Track and display performance metrics for image generation
- */
+
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Activity, 
-  Clock, 
-  Zap, 
-  TrendingUp, 
+import {
+  Activity,
+  Clock,
+  Zap,
+  TrendingUp,
   BarChart3,
   Cpu,
   HardDrive,
@@ -43,38 +39,38 @@ interface PerformanceMonitorProps {
   className?: string;
 }
 
-const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ 
-  onMetricsUpdate, 
-  className 
+const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
+  onMetricsUpdate,
+  className
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [metrics, setMetrics] = useState<PerformanceMetrics[]>([]);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
 
-  // Add new performance metric
+
   const addMetric = useCallback((metric: PerformanceMetrics) => {
-    setMetrics(prev => [metric, ...prev.slice(0, 99)]); // Keep last 100 metrics
+    setMetrics(prev => [metric, ...prev.slice(0, 99)]);
     onMetricsUpdate?.(metric);
   }, [onMetricsUpdate]);
 
-  // Monitor system performance
+
   useEffect(() => {
     if (!isMonitoring) return;
 
     const interval = setInterval(async () => {
       try {
-        // Simulate system metrics (in a real app, these would come from actual APIs)
+
         const memoryInfo = (performance as any).memory;
         const networkStart = performance.now();
-        
-        // Simple network latency test
+
+
         await fetch('/api/v1/health', { method: 'HEAD' }).catch(() => {});
         const networkLatency = performance.now() - networkStart;
 
         const newSystemMetrics: SystemMetrics = {
           memoryUsage: memoryInfo ? (memoryInfo.usedJSHeapSize / memoryInfo.totalJSHeapSize) * 100 : 0,
-          cpuUsage: Math.random() * 30 + 10, // Simulated CPU usage
+          cpuUsage: Math.random() * 30 + 10,
           networkLatency,
           timestamp: Date.now()
         };
@@ -88,19 +84,19 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     return () => clearInterval(interval);
   }, [isMonitoring]);
 
-  // Calculate performance statistics
+
   const stats = React.useMemo(() => {
     if (metrics.length === 0) return null;
 
     const successfulMetrics = metrics.filter(m => m.success);
     const times = successfulMetrics.map(m => m.generationTime);
-    
+
     const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
     const minTime = Math.min(...times);
     const maxTime = Math.max(...times);
     const successRate = (successfulMetrics.length / metrics.length) * 100;
 
-    // Performance trend (last 10 vs previous 10)
+
     const recent = times.slice(0, 10);
     const previous = times.slice(10, 20);
     const recentAvg = recent.length > 0 ? recent.reduce((a, b) => a + b, 0) / recent.length : 0;
@@ -145,7 +141,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Tooltip content={isMonitoring ? 'Stop monitoring' : 'Start monitoring'}>
               <Button
@@ -155,7 +151,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 icon={<Activity className="h-4 w-4" />}
               />
             </Tooltip>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -165,7 +161,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <div className="text-center">
@@ -189,7 +185,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           </div>
         )}
 
-        {/* Expanded View */}
+        {}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -198,7 +194,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               exit={{ opacity: 0, height: 0 }}
               className="mt-6 space-y-6"
             >
-              {/* System Metrics */}
+              {}
               {systemMetrics && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center space-x-2">
@@ -215,13 +211,13 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                         {systemMetrics.memoryUsage.toFixed(1)}%
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                        <div 
+                        <div
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${systemMetrics.memoryUsage}%` }}
                         />
                       </div>
                     </div>
-                    
+
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">CPU</span>
@@ -231,13 +227,13 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                         {systemMetrics.cpuUsage.toFixed(1)}%
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                        <div 
+                        <div
                           className="bg-green-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${systemMetrics.cpuUsage}%` }}
                         />
                       </div>
                     </div>
-                    
+
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Network</span>
@@ -258,7 +254,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 </div>
               )}
 
-              {/* Recent Generations */}
+              {}
               {metrics.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-3 flex items-center space-x-2">
@@ -288,7 +284,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 </div>
               )}
 
-              {/* Performance Tips */}
+              {}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center space-x-2">
                   <TrendingUp className="h-4 w-4" />
@@ -309,7 +305,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   );
 };
 
-// Hook for tracking performance metrics
+
 export const usePerformanceTracking = () => {
   const [metrics, setMetrics] = useState<PerformanceMetrics[]>([]);
 
@@ -325,7 +321,7 @@ export const usePerformanceTracking = () => {
       parameters,
       success
     };
-    
+
     setMetrics(prev => [metric, ...prev.slice(0, 99)]);
     return metric;
   }, []);

@@ -1,8 +1,4 @@
-/**
- * Enhanced Modal Component
- * 
- * Modern modal with backdrop blur and smooth animations
- */
+
 
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +26,7 @@ const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   className
 }) => {
-  // Handle escape key
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -42,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when modal is open
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -75,7 +71,7 @@ const Modal: React.FC<ModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
+          {}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -84,7 +80,7 @@ const Modal: React.FC<ModalProps> = ({
             onClick={closeOnBackdrop ? onClose : undefined}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -92,7 +88,7 @@ const Modal: React.FC<ModalProps> = ({
             transition={{ type: 'spring', duration: 0.3 }}
             className={modalClasses}
           >
-            {/* Header */}
+            {}
             {(title || showCloseButton) && (
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 {title && (
@@ -111,7 +107,7 @@ const Modal: React.FC<ModalProps> = ({
               </div>
             )}
 
-            {/* Content */}
+            {}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-8rem)]">
               {children}
             </div>

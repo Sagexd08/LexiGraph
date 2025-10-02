@@ -1,17 +1,13 @@
-/**
- * Batch Generator Component
- * 
- * Generate multiple images with variations and batch processing
- */
+
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Play, 
-  Pause, 
-  Square, 
-  Plus, 
-  Minus, 
+import {
+  Play,
+  Pause,
+  Square,
+  Plus,
+  Minus,
   Shuffle,
   Download,
   Grid,
@@ -23,6 +19,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+import { GlassCard, AdvancedButton } from '../design-system';
 import { Button, Card, Modal, Input, Tooltip } from './ui';
 import { GenerationParams, GenerateImageResponse } from '../types/api';
 
@@ -59,7 +56,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
 
   const generateVariations = useCallback(() => {
     const variations: BatchJob[] = [];
-    
+
     switch (variationMode) {
       case 'seed':
         for (let i = 0; i < batchSize; i++) {
@@ -74,7 +71,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
           });
         }
         break;
-        
+
       case 'prompt':
         promptVariations.filter(p => p.trim()).forEach((prompt, i) => {
           variations.push({
@@ -88,11 +85,11 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
           });
         });
         break;
-        
+
       case 'params':
         const guidanceScales = [6.0, 7.5, 9.0, 12.0];
         const steps = [15, 20, 25, 30];
-        
+
         for (let i = 0; i < Math.min(batchSize, 4); i++) {
           variations.push({
             id: `params-${i}-${Date.now()}`,
@@ -108,46 +105,46 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
         }
         break;
     }
-    
+
     setJobs(variations);
   }, [baseParams, batchSize, variationMode, promptVariations]);
 
   const startBatch = useCallback(async () => {
     if (jobs.length === 0) return;
-    
+
     setIsRunning(true);
     setCurrentJobIndex(0);
-    
+
     for (let i = 0; i < jobs.length; i++) {
-      if (!isRunning) break; // Check if stopped
-      
+      if (!isRunning) break;
+
       setCurrentJobIndex(i);
-      setJobs(prev => prev.map((job, index) => 
+      setJobs(prev => prev.map((job, index) =>
         index === i ? { ...job, status: 'generating', startTime: Date.now() } : job
       ));
-      
+
       try {
         const result = await onGenerate(jobs[i].params);
-        setJobs(prev => prev.map((job, index) => 
-          index === i ? { 
-            ...job, 
-            status: 'completed', 
+        setJobs(prev => prev.map((job, index) =>
+          index === i ? {
+            ...job,
+            status: 'completed',
             result,
             endTime: Date.now()
           } : job
         ));
       } catch (error) {
-        setJobs(prev => prev.map((job, index) => 
-          index === i ? { 
-            ...job, 
-            status: 'failed', 
+        setJobs(prev => prev.map((job, index) =>
+          index === i ? {
+            ...job,
+            status: 'failed',
             error: error instanceof Error ? error.message : 'Unknown error',
             endTime: Date.now()
           } : job
         ));
       }
     }
-    
+
     setIsRunning(false);
   }, [jobs, onGenerate, isRunning]);
 
@@ -207,10 +204,10 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
         size="xl"
       >
         <div className="space-y-6">
-          {/* Configuration */}
+          {}
           <Card className="p-4">
             <h4 className="font-semibold mb-4">Batch Configuration</h4>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Variation Mode</label>
@@ -224,7 +221,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                   <option value="params">Different Parameters</option>
                 </select>
               </div>
-              
+
               {variationMode !== 'prompt' && (
                 <div>
                   <label className="block text-sm font-medium mb-2">Batch Size</label>
@@ -240,7 +237,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
               )}
             </div>
 
-            {/* Prompt Variations */}
+            {}
             {variationMode === 'prompt' && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
@@ -277,37 +274,38 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
             )}
 
             <div className="flex gap-2 mt-4">
-              <Button
+              <AdvancedButton
                 onClick={generateVariations}
                 icon={<Shuffle className="h-4 w-4" />}
                 disabled={isRunning}
+                variant="secondary"
               >
                 Generate Variations
-              </Button>
-              
+              </AdvancedButton>
+
               {jobs.length > 0 && (
                 <>
-                  <Button
+                  <AdvancedButton
                     onClick={isRunning ? stopBatch : startBatch}
                     variant={isRunning ? 'danger' : 'primary'}
                     icon={isRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                   >
                     {isRunning ? 'Stop' : 'Start Batch'}
-                  </Button>
-                  
-                  <Button
+                  </AdvancedButton>
+
+                  <AdvancedButton
                     onClick={clearJobs}
-                    variant="outline"
+                    variant="ghost"
                     disabled={isRunning}
                   >
                     Clear
-                  </Button>
+                  </AdvancedButton>
                 </>
               )}
             </div>
           </Card>
 
-          {/* Progress */}
+          {}
           {jobs.length > 0 && (
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
@@ -327,7 +325,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                       icon={<List className="h-4 w-4" />}
                     />
                   </div>
-                  
+
                   {completedJobs > 0 && (
                     <Button
                       size="sm"
@@ -339,14 +337,14 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                   )}
                 </div>
               </div>
-              
+
               <div className="mb-4">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <span>{completedJobs + failedJobs} / {jobs.length} completed</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
@@ -370,11 +368,11 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
             </Card>
           )}
 
-          {/* Results */}
+          {}
           {jobs.length > 0 && (
             <Card className="p-4">
               <h4 className="font-semibold mb-4">Results</h4>
-              
+
               {viewMode === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {jobs.map((job, index) => (
@@ -400,7 +398,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="absolute top-2 right-2">
                         {job.status === 'completed' && (
                           <CheckCircle className="h-5 w-5 text-green-500 bg-white rounded-full" />
@@ -412,7 +410,7 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                           <div className="h-5 w-5 bg-indigo-600 rounded-full animate-pulse" />
                         )}
                       </div>
-                      
+
                       {index === currentJobIndex && isRunning && (
                         <div className="absolute inset-0 border-2 border-indigo-500 rounded-lg" />
                       )}
@@ -440,18 +438,18 @@ const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                           </div>
                           <span className="text-sm font-medium">Job {index + 1}</span>
                         </div>
-                        
+
                         <div className="text-sm text-gray-500">
                           {job.endTime && job.startTime && (
                             <span>{((job.endTime - job.startTime) / 1000).toFixed(1)}s</span>
                           )}
                         </div>
                       </div>
-                      
+
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">
                         {job.prompt}
                       </p>
-                      
+
                       {job.error && (
                         <p className="text-sm text-red-600 dark:text-red-400 mt-1">
                           Error: {job.error}

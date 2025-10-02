@@ -1,27 +1,37 @@
+
 /**
- * Enhanced Components Export Index
- * 
- * Centralized exports for all enhanced components
+ * Enhanced LexiGraph Components
+ *
+ * This module exports all the enhanced components for the LexiGraph application.
+ * These components feature modern React patterns, comprehensive error handling,
+ * and advanced user experience improvements.
  */
 
-// Enhanced Core Components
-export { default as EnhancedImageGenerator } from '../EnhancedImageGenerator';
-export { default as EnhancedParameterControls } from '../EnhancedParameterControls';
+// Main enhanced components
+export { default as EnhancedImageGenerator } from './EnhancedImageGenerator';
+export { default as IntegrationExample } from './IntegrationExample';
 
-// Advanced Features
+// Common enhanced components
+export { default as AdvancedLoader } from '../common/AdvancedLoader';
+export { default as PlaceholderImage } from '../common/PlaceholderImage';
+export { default as StylesDropdown } from '../common/StylesDropdown';
+
+// Enhanced parameter controls
+export { default as ParameterControls } from '../ParameterControls';
+
+// Legacy components (for backward compatibility)
+// Note: ImageGenerator has been replaced by EnhancedImageGenerator
 export { default as PromptBuilder } from '../PromptBuilder';
 export { default as ImageViewer } from '../ImageViewer';
 export { default as BatchGenerator } from '../BatchGenerator';
-
-// Utility Components
 export { default as KeyboardShortcuts, useKeyboardShortcuts } from '../KeyboardShortcuts';
 export { default as PerformanceMonitor, usePerformanceTracking } from '../PerformanceMonitor';
 export { default as ThemeCustomizer } from '../ThemeCustomizer';
 
-// UI Components
+// UI components
 export * from '../ui';
 
-// Types
+// Type exports
 export type { ButtonProps } from '../ui/Button';
 export type { CardProps } from '../ui/Card';
 export type { InputProps } from '../ui/Input';

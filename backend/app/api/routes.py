@@ -1,7 +1,6 @@
 import logging
 import asyncio
 import time
-import sqlite3
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, status, Header, Query
@@ -69,37 +68,7 @@ class GenerateImageRequest(BaseModel):
             raise ValueError(f"Invalid scheduler. Available schedulers: {valid_schedulers}")
         return v
 
-def save_generation_history(request: GenerateImageRequest, result: Dict[str, Any]):
-    """Save generation to history database."""
-    try:
-        conn = sqlite3.connect("lexigraph_history.db")
-        cursor = conn.cursor()
 
-        cursor.execute("""
-            INSERT INTO generation_history
-            (prompt, negative_prompt, width, height, num_inference_steps,
-             guidance_scale, seed, style, scheduler, generation_time,
-             image_hash, success)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            request.prompt,
-            request.negative_prompt,
-            request.width,
-            request.height,
-            request.num_inference_steps,
-            request.guidance_scale,
-            request.seed,
-            request.style,
-            request.scheduler,
-            result.get("metadata", {}).get("generation_time", 0),
-            result.get("image", "")[:32] if result.get("image") else "",  # First 32 chars as hash
-            result.get("success", False)
-        ))
-
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        logger.error(f"Failed to save generation history: {e}")
 
 class GenerateImageResponse(BaseModel):
     success: bool
@@ -145,7 +114,7 @@ async def generate_image(
 ):
     """
     Generate an image from a text prompt.
-    
+
     This endpoint accepts a text prompt and various generation parameters,
     then returns a base64-encoded image along with metadata.
     """
@@ -193,11 +162,10 @@ async def generate_image(
                 use_cache=request.use_cache
             )
 
-            # Save to history
-            save_generation_history(request, result)
-            
+
+
             generation_time = time.time() - start_time
-            
+
             if result["success"]:
                 logger.info(f"Image generated successfully in {generation_time:.2f}s")
                 return GenerateImageResponse(
@@ -212,7 +180,7 @@ async def generate_image(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=result.get("error", "Image generation failed")
                 )
-                
+
         except HTTPException:
             raise
         except Exception as e:
@@ -226,7 +194,7 @@ async def generate_image(
 async def get_model_info(authenticated: bool = Depends(verify_api_key)):
     """
     Get information about the currently loaded model.
-    
+
     Returns details about the model type, device, optimizations, and configuration.
     """
     try:
@@ -249,7 +217,7 @@ async def load_model(
 ):
     """
     Load or reload the model.
-    
+
     Optionally specify a different model path to load.
     """
     try:
@@ -273,7 +241,7 @@ async def load_model(
 async def unload_model(authenticated: bool = Depends(verify_api_key)):
     """
     Unload the current model and free memory.
-    
+
     Useful for switching models or freeing up GPU memory.
     """
     try:
@@ -290,26 +258,26 @@ async def unload_model(authenticated: bool = Depends(verify_api_key)):
 async def get_system_info(authenticated: bool = Depends(verify_api_key)):
     """
     Get comprehensive system information.
-    
+
     Returns memory usage, device information, model status, and configuration.
     """
     try:
         import torch
-        
+
         memory_info = get_memory_info()
-        
+
         device_info = {
             "device": image_generator.device,
             "cuda_available": torch.cuda.is_available(),
             "cuda_device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
         }
-        
+
         if torch.cuda.is_available():
             device_info["cuda_device_name"] = torch.cuda.get_device_name(0)
             device_info["cuda_capability"] = torch.cuda.get_device_capability(0)
-        
+
         model_info = image_generator.get_model_info()
-        
+
         settings_info = {
             "model_type": settings.model_type,
             "base_model": settings.base_model,
@@ -318,14 +286,14 @@ async def get_system_info(authenticated: bool = Depends(verify_api_key)):
             "enable_cpu_offload": settings.enable_cpu_offload,
             "enable_attention_slicing": settings.enable_attention_slicing,
         }
-        
+
         return SystemInfoResponse(
             memory_info=memory_info,
             device_info=device_info,
             model_info=model_info,
             settings=settings_info
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting system info: {str(e)}")
         raise HTTPException(
@@ -337,7 +305,7 @@ async def get_system_info(authenticated: bool = Depends(verify_api_key)):
 async def cleanup_system_memory(authenticated: bool = Depends(verify_api_key)):
     """
     Clean up system memory and GPU cache.
-    
+
     Forces garbage collection and clears GPU memory cache.
     """
     try:
@@ -357,101 +325,9 @@ async def get_job_status(job_id: str, authenticated: bool = Depends(verify_api_k
         raise HTTPException(status_code=404, detail="Job not found")
     return status_info
 
-@router.get("/history")
-async def get_generation_history(
-    limit: int = Query(default=50, ge=1, le=200, description="Number of records to return"),
-    offset: int = Query(default=0, ge=0, description="Number of records to skip"),
-    authenticated: bool = Depends(verify_api_key)
-):
-    """
-    Get generation history with pagination.
 
-    Returns previously generated images with their parameters and metadata.
-    """
-    try:
-        conn = sqlite3.connect("lexigraph_history.db")
-        cursor = conn.cursor()
 
-        # Get total count
-        cursor.execute("SELECT COUNT(*) FROM generation_history")
-        total_count = cursor.fetchone()[0]
 
-        # Get paginated results
-        cursor.execute("""
-            SELECT id, prompt, negative_prompt, width, height, num_inference_steps,
-                   guidance_scale, seed, style, scheduler, generation_time,
-                   created_at, success
-            FROM generation_history
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-        """, (limit, offset))
-
-        records = cursor.fetchall()
-        conn.close()
-
-        # Format results
-        history = []
-        for record in records:
-            history.append({
-                "id": record[0],
-                "prompt": record[1],
-                "negative_prompt": record[2],
-                "width": record[3],
-                "height": record[4],
-                "num_inference_steps": record[5],
-                "guidance_scale": record[6],
-                "seed": record[7],
-                "style": record[8],
-                "scheduler": record[9],
-                "generation_time": record[10],
-                "created_at": record[11],
-                "success": bool(record[12])
-            })
-
-        return {
-            "success": True,
-            "history": history,
-            "pagination": {
-                "total": total_count,
-                "limit": limit,
-                "offset": offset,
-                "has_more": offset + limit < total_count
-            }
-        }
-
-    except Exception as e:
-        logger.error(f"Error getting generation history: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get generation history: {str(e)}"
-        )
-
-@router.delete("/history")
-async def clear_generation_history(authenticated: bool = Depends(verify_api_key)):
-    """
-    Clear all generation history.
-
-    Removes all records from the generation history database.
-    """
-    try:
-        conn = sqlite3.connect("lexigraph_history.db")
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM generation_history")
-        deleted_count = cursor.rowcount
-        conn.commit()
-        conn.close()
-
-        return {
-            "success": True,
-            "message": f"Cleared {deleted_count} history records"
-        }
-
-    except Exception as e:
-        logger.error(f"Error clearing generation history: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to clear generation history: {str(e)}"
-        )
 
 @router.get("/cache/stats")
 async def get_cache_stats(authenticated: bool = Depends(verify_api_key)):
@@ -497,7 +373,7 @@ async def clear_cache(authenticated: bool = Depends(verify_api_key)):
 async def get_available_styles():
     """
     Get list of available style presets.
-    
+
     Returns all configured style presets with their descriptions.
     """
     try:
@@ -508,7 +384,7 @@ async def get_available_styles():
                 "positive_suffix": style_config.get("positive_suffix", ""),
                 "negative_prompt": style_config.get("negative_prompt", "")
             }
-        
+
         return {
             "success": True,
             "styles": styles,

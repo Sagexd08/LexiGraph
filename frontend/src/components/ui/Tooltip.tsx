@@ -1,9 +1,3 @@
-/**
- * Enhanced Tooltip Component
- * 
- * Modern tooltip with multiple positions and animations
- */
-
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -30,11 +24,11 @@ const Tooltip: React.FC<TooltipProps> = ({
 
   const showTooltip = () => {
     if (disabled) return;
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
     }, delay);
@@ -94,7 +88,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       onBlur={hideTooltip}
     >
       {children}
-      
+
       <AnimatePresence>
         {isVisible && content && (
           <motion.div

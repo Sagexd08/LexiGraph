@@ -1,17 +1,13 @@
-/**
- * Enhanced Image Viewer Component
- * 
- * Advanced image viewer with zoom, pan, fullscreen, and comparison features
- */
+
 
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Maximize, 
-  Download, 
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Maximize,
+  Download,
   Copy,
   X,
   Move,
@@ -45,7 +41,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState(false);
   const [comparisonMode, setComparisonMode] = useState<'side-by-side' | 'overlay' | 'slider'>('side-by-side');
-  
+
   const imageRef = useRef<HTMLDivElement>(null);
 
   const handleZoomIn = useCallback(() => {
@@ -124,7 +120,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         onDragStart={() => setIsDragging(true)}
         onDragEnd={() => setIsDragging(false)}
       />
-      
+
       {showGrid && (
         <div className="absolute inset-0 pointer-events-none">
           <svg className="w-full h-full" style={{ opacity: 0.3 }}>
@@ -159,7 +155,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   return (
     <>
       <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Toolbar */}
+        {}
         <div className="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
           <ToolbarButton
             icon={ZoomIn}
@@ -200,14 +196,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           />
         </div>
 
-        {/* Zoom indicator */}
+        {}
         {zoom !== 1 && (
           <div className="absolute bottom-4 left-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-1 text-sm font-medium">
             {Math.round(zoom * 100)}%
           </div>
         )}
 
-        {/* Main Image Container */}
+        {}
         <div className="aspect-square relative">
           {showComparison && comparisonImage ? (
             <div className="w-full h-full flex">
@@ -227,7 +223,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           )}
         </div>
 
-        {/* Metadata Panel */}
+        {}
         {metadata && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -252,7 +248,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
         )}
       </div>
 
-      {/* Fullscreen Modal */}
+      {}
       <Modal
         isOpen={isFullscreen}
         onClose={() => setIsFullscreen(false)}
@@ -262,8 +258,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       >
         <div className="relative w-full h-full">
           <ImageContent src={image} alt="Generated image (fullscreen)" />
-          
-          {/* Fullscreen Toolbar */}
+
+          {}
           <div className="absolute top-4 right-4 flex items-center space-x-2 bg-black/50 backdrop-blur-sm rounded-lg p-2">
             <ToolbarButton
               icon={ZoomIn}

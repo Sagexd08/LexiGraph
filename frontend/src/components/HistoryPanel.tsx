@@ -1,18 +1,13 @@
-/**
- * History Panel Component
- * 
- * Displays generation history with search, filtering, and management capabilities.
- * Stores history in localStorage and provides options to reuse parameters.
- */
+
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  Trash2, 
-  Heart, 
-  Download, 
+import {
+  Search,
+  Filter,
+  Trash2,
+  Heart,
+  Download,
   Copy,
   Clock,
   Image as ImageIcon,
@@ -34,11 +29,11 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
   });
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
-  // Filter and sort history
+
   const filteredHistory = useMemo(() => {
     let filtered = [...history];
 
-    // Apply search filter
+
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
       filtered = filtered.filter(item =>
@@ -47,17 +42,17 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
       );
     }
 
-    // Apply favorites filter
+
     if (filter.favorites) {
       filtered = filtered.filter(item => item.favorite);
     }
 
-    // Apply style filter
+
     if (filter.style) {
       filtered = filtered.filter(item => item.metadata.style === filter.style);
     }
 
-    // Apply date range filter
+
     if (filter.dateRange) {
       filtered = filtered.filter(item => {
         const itemDate = new Date(item.timestamp);
@@ -65,13 +60,13 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
       });
     }
 
-    // Sort by timestamp (newest first)
+
     filtered.sort((a, b) => b.timestamp - a.timestamp);
 
     return filtered;
   }, [history, filter]);
 
-  // Get unique styles for filter dropdown
+
   const availableStyles = useMemo(() => {
     const styles = new Set<string>();
     history.forEach(item => {
@@ -82,14 +77,14 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
     return Array.from(styles).sort();
   }, [history]);
 
-  // Toggle favorite status
+
   const toggleFavorite = (id: string) => {
     setHistory(prev => prev.map(item =>
       item.id === id ? { ...item, favorite: !item.favorite } : item
     ));
   };
 
-  // Delete single item
+
   const deleteItem = (id: string) => {
     setHistory(prev => prev.filter(item => item.id !== id));
     setSelectedItems(prev => {
@@ -99,19 +94,19 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
     });
   };
 
-  // Delete selected items
+
   const deleteSelected = () => {
     setHistory(prev => prev.filter(item => !selectedItems.has(item.id)));
     setSelectedItems(new Set());
   };
 
-  // Clear all history
+
   const clearHistory = () => {
     setHistory([]);
     setSelectedItems(new Set());
   };
 
-  // Toggle item selection
+
   const toggleSelection = (id: string) => {
     setSelectedItems(prev => {
       const newSet = new Set(prev);
@@ -124,17 +119,17 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
     });
   };
 
-  // Select all filtered items
+
   const selectAll = () => {
     setSelectedItems(new Set(filteredHistory.map(item => item.id)));
   };
 
-  // Deselect all
+
   const deselectAll = () => {
     setSelectedItems(new Set());
   };
 
-  // Download image
+
   const downloadImage = (item: GenerationHistoryItem) => {
     try {
       const link = document.createElement('a');
@@ -148,7 +143,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
     }
   };
 
-  // Format timestamp
+
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -182,7 +177,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-      {/* Header */}
+      {}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -214,9 +209,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
           </div>
         </div>
 
-        {/* Filters */}
+        {}
         <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
+          {}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -228,7 +223,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
             />
           </div>
 
-          {/* Style Filter */}
+          {}
           {availableStyles.length > 0 && (
             <select
               value={filter.style || ''}
@@ -242,7 +237,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
             </select>
           )}
 
-          {/* Favorites Toggle */}
+          {}
           <button
             onClick={() => setFilter(prev => ({ ...prev, favorites: !prev.favorites }))}
             className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
@@ -256,7 +251,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
           </button>
         </div>
 
-        {/* Bulk Actions */}
+        {}
         {filteredHistory.length > 0 && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-4">
@@ -274,7 +269,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
         )}
       </div>
 
-      {/* History Grid */}
+      {}
       <div className="p-6">
         {filteredHistory.length === 0 ? (
           <div className="text-center py-8">
@@ -299,15 +294,15 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
                   }`}
                   onClick={() => toggleSelection(item.id)}
                 >
-                  {/* Image */}
+                  {}
                   <div className="aspect-square relative">
                     <img
                       src={item.image}
                       alt={item.prompt}
                       className="w-full h-full object-cover"
                     />
-                    
-                    {/* Overlay Actions */}
+
+                    {}
                     <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
                       <div className="flex space-x-2">
                         <button
@@ -333,7 +328,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
                       </div>
                     </div>
 
-                    {/* Selection Indicator */}
+                    {}
                     {selectedItems.has(item.id) && (
                       <div className="absolute top-2 right-2 w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center">
                         <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -341,7 +336,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ onItemSelect }) => {
                     )}
                   </div>
 
-                  {/* Content */}
+                  {}
                   <div className="p-3">
                     <div className="flex items-start justify-between mb-2">
                       <p className="text-sm text-gray-900 dark:text-white line-clamp-2 flex-1">

@@ -1,8 +1,4 @@
-/**
- * Enhanced Input Component
- * 
- * Modern input component with validation states and icons
- */
+
 
 import React, { forwardRef } from 'react';
 import { clsx } from 'clsx';
@@ -33,9 +29,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   ...props
 }, ref) => {
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const baseClasses = 'w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0';
-  
+
   const variants = {
     default: 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-200 dark:focus:ring-indigo-800',
     filled: 'border-0 bg-gray-100 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-700 focus:ring-indigo-200 dark:focus:ring-indigo-800',
@@ -48,7 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
     lg: 'px-5 py-4 text-base rounded-lg'
   };
 
-  const stateClasses = error 
+  const stateClasses = error
     ? 'border-red-500 focus:border-red-500 focus:ring-red-200 dark:focus:ring-red-800'
     : success
     ? 'border-green-500 focus:border-green-500 focus:ring-green-200 dark:focus:ring-green-800'
@@ -69,14 +65,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   return (
     <div className="w-full">
       {label && (
-        <label 
+        <label
           htmlFor={inputId}
           className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
         >
           {label}
         </label>
       )}
-      
+
       <div className="relative">
         {leftIcon && (
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -85,14 +81,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             </div>
           </div>
         )}
-        
+
         <input
           ref={ref}
           id={inputId}
           className={inputClasses}
           {...props}
         />
-        
+
         {rightIcon && !error && !success && (
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <div className="h-5 w-5 text-gray-400">
@@ -100,20 +96,20 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             </div>
           </div>
         )}
-        
+
         {error && (
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <AlertCircle className="h-5 w-5 text-red-500" />
           </div>
         )}
-        
+
         {success && (
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <Check className="h-5 w-5 text-green-500" />
           </div>
         )}
       </div>
-      
+
       {(error || success || hint) && (
         <div className="mt-2">
           {error && (
